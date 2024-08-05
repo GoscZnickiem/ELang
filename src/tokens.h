@@ -5,6 +5,7 @@
 
 
 typedef enum iTokenType {
+	INVALID,
 	SEMICOLON,
 	RETURN,
 	IDENTIFIER,

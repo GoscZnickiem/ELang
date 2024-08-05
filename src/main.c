@@ -9,9 +9,9 @@ static void printHelp(char* progName) {
 }
 
 static void compileUnit(FILE* file) {
-	printf("I'm compiling this fucker trust me\n");
+	printf("Compiling\n");
 	TokenList* tokens;
-	size_t tokenCount = tokenize(tokens, file);
+	tokenize(tokens, file);
 }
 
 int main(int argc, char *argv[]) {

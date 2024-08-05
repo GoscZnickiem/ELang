@@ -1,30 +1,57 @@
 #include "lexer.h"
+#include "states.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-TokenList addToken(TokenList* tokens, Token* token) {
+static bool bufferedChar = false;
+static int c;
+static bool done;
+static bool eof = false;
+static int state;
+static char tokenBuffer[MAX_IDENT_LEN];
+static int tokenLength;
 
-}
-
-int isWhiteSpace(int c) {
-	return c == ' ' || c == '\n';
-}
-
-int makeToken(Token* token, char* ident) {
-	if(strcmp(ident, ";") != 0) {
-		createToken(token, SEMICOLON, ";");
-		return 1;
-	} else if(strcmp(ident, "return") != 0) {
-		createToken(token, RETURN, "return");
-		return 1;
-	} else if(strcmp(ident, "test") != 0) {
-		createToken(token, IDENTIFIER, ident);
-		return 1;
+static void step(FILE* file) {
+	if(!bufferedChar)
+		c = fgetc(file);
+	if(c == EOF) {
+		done = true;
+		eof = true;
+		return;
 	}
 
-	fprintf(stderr, "Lexer error\n");
-	return 0;
+	bool skip;
+	processState(&done, &state, &skip, (char) c);
+
+	if(tokenLength == MAX_IDENT_LEN) {
+		// TODO: something
+		fprintf(stderr, "tokenLength == max ident length");
+		return;
+	}
+	if(!done) {
+		tokenBuffer[tokenLength] = (char) c;
+		tokenLength++;
+	} else {
+		bufferedChar = !skip;
+	}
+}
+
+static void readToken(FILE* file) {
+	done = 0;
+	state = 0;
+	tokenLength = 0;
+
+	while(!done)
+		step(file);
+
+	if(state < 0) {
+		fprintf(stderr, "invalid end state\n");
+	}
+
+
 }
 
 void tokenize(TokenList* tokens, FILE* file) {
@@ -33,27 +60,12 @@ void tokenize(TokenList* tokens, FILE* file) {
 		fprintf(stderr, "Memory allocation error\n");
 		return;
 	}
-	char strBuffer[MAX_IDENT_LEN] = { 0 };
 
 	size_t strIndex = 0;
+
 	int c;
 	while ( (c = fgetc(file)) != EOF ) {
-		if(isWhiteSpace(c)) {
-			if(strIndex != 0) {
-				makeToken(bufferToken, strBuffer);
-				addToken(tokens, bufferToken);
-				strBuffer[0] = 0;
-				strIndex = 0;
-			}
-		} else {
-			if(strIndex == MAX_IDENT_LEN) {
-				fprintf(stderr, "aaaaaaaaaaaaaa\n");
-				free(bufferToken);
-				return;
-			}
-			strBuffer[strIndex] = (char)c;
-			strIndex++;
-		}
+
 	}
 
 	free(bufferToken);
