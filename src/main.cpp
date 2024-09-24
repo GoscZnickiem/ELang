@@ -1,4 +1,4 @@
-#include "tokenizer/tokenizer.hpp"
+#include "lexer/lexer.hpp"
 #include <fstream>
 #include <iostream>
 #include <vector>
