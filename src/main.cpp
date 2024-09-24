@@ -1,6 +1,6 @@
+#include "tokenizer/tokenizer.hpp"
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <vector>
 
 int main(int argc, char *argv[]) {
@@ -35,12 +35,13 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		std::string line;
-		while(std::getline(file, line)) {
-			std::cout << line << "\n";
+		auto tokens = elc::tokenize(file);
+		file.close();
+
+		for(auto& token : tokens) {
+			std::cout << token << "\n";
 		}
 
-		file.close();
 	}
 
 }

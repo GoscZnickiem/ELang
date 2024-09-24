@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(project_warnings INTERFACE)
 add_library(project_options INTERFACE)
 
-option(project_WARNINGS_AS_ERRORS "Treat Warnings As Errors" OFF)
+option(project_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
 option(project_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
 
 function(

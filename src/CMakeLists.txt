@@ -1,7 +1,3 @@
-set(SOURCES
+file(GLOB_RECURSE PROJECT_SOURCES "*.cpp" "*.hpp" "*.h")
 
-	main.cpp
-
-)
-
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
