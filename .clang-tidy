@@ -14,6 +14,7 @@ Checks: '-*,
   -cppcoreguidelines-non-private-member-variables-in-classes
   -cppcoreguidelines-avoid-c-arrays,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-macro-usage,
   google-build-using-namespace,
   google-explicit-constructor,
   google-global-names-in-headers,

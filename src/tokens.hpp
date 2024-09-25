@@ -9,7 +9,7 @@ namespace elc {
 enum class TokenType {
 	INVALID,
 	KEYWORD,
-	OPERATOR,
+	SYMBOL,
 	IDENTIFIER,
 	NUMERAL,
 	STRING
