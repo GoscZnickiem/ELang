@@ -16,7 +16,7 @@ const std::map<TokenType, std::string> convert = {
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& token) {
-	os << convert.at(token.type) << " (" << token.data << ")";
+	os << convert.at(token.type) << " (" << token.data << "), length: " << token.size << " at: " << token.line << ":" << token.column;
 	return os;
 }
 
