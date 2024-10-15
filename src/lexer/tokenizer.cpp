@@ -28,6 +28,7 @@ std::vector<Token> Tokenizer::tokenize() {
 		}
 		c = source->get();
 	}
+	state->process(*this, '\0');
 	return std::move(tokens);
 }
 
@@ -44,6 +45,10 @@ void Tokenizer::add(int c) {
 
 void Tokenizer::repeat() {
 	rep = true;
+}
+
+void Tokenizer::resetState() {
+	changeState<state::Init>();
 }
 
 }

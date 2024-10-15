@@ -23,6 +23,7 @@ public:
 	void add(int c);
 	void repeat();
 
+	void resetState();
 	template<typename T, typename... Args>
 	void changeState(Args... args) {
 		state = std::make_unique<T>(args...);

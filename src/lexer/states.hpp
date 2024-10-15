@@ -1,6 +1,7 @@
 #ifndef _ELC_LEXER_STATES_
 #define _ELC_LEXER_STATES_
 
+#include <string>
 #define DECLSTATE(s) class s : public State { public: void process(Tokenizer& t, int c) final; private:
 
 namespace elc {
@@ -21,23 +22,42 @@ public:
 
 namespace state {
 
-DECLSTATE(Init) };
-DECLSTATE(String) 
+class Init : public State { 
+public: 
+	void process(Tokenizer& t, int c) final; 
+};
+
+class String : public State { 
+public: 
+	void process(Tokenizer& t, int c) final; 
+private:
 	bool slash = false;
 };
-DECLSTATE(Numeral) 
-	bool dot = false;
-public:
+
+class Numeral : public State { 
+public: 
 	explicit Numeral(bool d = false);
+	void process(Tokenizer& t, int c) final; 
+private:
+	bool dot = false;
 };
-DECLSTATE(Ident) };
-DECLSTATE(Symbol)
-	bool empty = true;
-public:
-	explicit Symbol(bool e = true);
+
+class Ident : public State { 
+public: 
+	void process(Tokenizer& t, int c) final; 
 };
-DECLSTATE(Minus) };
-DECLSTATE(Dot) };
+
+class Symbol : public State { 
+public: 
+	void process(Tokenizer& t, int c) final; 
+private:
+	std::string buffor;
+};
+
+class Dot : public State { 
+public: 
+	void process(Tokenizer& t, int c) final; 
+};
 
 }
 
