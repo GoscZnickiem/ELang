@@ -112,20 +112,20 @@ void Ident::process(Tokenizer& t, int c) {
 	if(std::isalnum(c) != 0 || c == '_') {
 		t.add(c);
 	} else {
-		t.pushToken(keywords.contains(t.buffer.str()) ? TokenType::KEYWORD : TokenType::IDENTIFIER);
+		t.pushToken(keywords.contains(t.buffer) ? TokenType::KEYWORD : TokenType::IDENTIFIER);
 		t.resetState();
 		t.repeat();
 	}
 }
 
-const std::set<std::string> symbols = { ";", "(", ")", "[", "]", "{", "}", "->", "=", "+", "-", "==", "<", ">", "<=", ">=", "!=", "++", "--", "+=", "-=", "*=", "/=", "==>>" };
+const std::set<std::string> symbols = { ";", "(", ")", "[", "]", "{", "}", "->", "=", "+", "-", "==", "<", ">", "<=", ">=", "!=", "++", "--", "+=", "-=", "*=", "/=", "." };
 
 void Symbol::process(Tokenizer& t, int c) {
-	if(std::ispunct(c) != 0 && c != '\"' && c != '.') {
+	if(std::ispunct(c) != 0 && c != '\"' && (t.buffer.empty() || c != '.')) {
 		t.add(c);
 		return;
 	}
-	std::string buffer = t.buffer.str();
+	std::string buffer = t.buffer;
 
 	while(!buffer.empty()) {
 		std::string longestMatch;
@@ -144,11 +144,7 @@ void Symbol::process(Tokenizer& t, int c) {
 		}
 
 		buffer = buffer.substr(longestMatch.length());
-		t.buffer.str("");
-		t.buffer.clear();
-		for(auto& c : longestMatch) {
-			t.add(c);
-		}
+		t.buffer = longestMatch;
 		t.pushToken(TokenType::SYMBOL);
 	}
 

@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <istream>
 #include <memory>
-#include <sstream>
 #include <vector>
 
 namespace elc {
@@ -32,7 +31,7 @@ public:
 	std::istream* source;
 	std::vector<Token> tokens;
 	std::unique_ptr<State> state;
-	std::stringstream buffer;
+	std::string buffer;
 	std::size_t line = 1;
 	std::size_t column = 1;
 	bool rep = false;

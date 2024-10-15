@@ -5,7 +5,6 @@
 #include <cctype>
 #include <iostream>
 #include <istream>
-#include <sstream>
 #include <vector>
 #include <utility>
 
@@ -33,14 +32,13 @@ std::vector<Token> Tokenizer::tokenize() {
 }
 
 void Tokenizer::pushToken(TokenType type) {
-	tokens.emplace_back(type, line, column - buffer.str().size(), buffer.str().size(), buffer.str());
-	buffer.str("");
+	tokens.emplace_back(type, line, column - buffer.size(), buffer.size(), buffer);
 	buffer.clear();
 	changeState<state::Init>();
 }
 
 void Tokenizer::add(int c) {
-	buffer << static_cast<char>(c);
+	buffer += static_cast<char>(c);
 }
 
 void Tokenizer::repeat() {
