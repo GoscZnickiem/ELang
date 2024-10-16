@@ -1,7 +1,1 @@
-fun main() -> int {
-	print("hello world\n");
-	if(4 > 2) {
-		return 5;
-	}
-	return 15 + 2.3 + -14 + .99 + -.99 + --12.2;
-}
+1;;;

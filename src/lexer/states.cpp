@@ -2,7 +2,7 @@
 #include "tokenizer.hpp"
 #include "tokens.hpp"
 #include <cctype>
-#include <set>
+#include <map>
 #include <stdexcept>
 #include <string>
 
@@ -27,6 +27,9 @@ void Init::process(Tokenizer& t, int c) {
 	} else if(std::ispunct(c) != 0) {
 		t.changeState<Symbol>();
 		t.repeat();
+	} else {
+		t.buffer.clear();
+		t.pushToken(TokenType::END);
 	}
 	// else { 
 	// 	std::string err = "Unexpected character '";
@@ -106,19 +109,33 @@ void Numeral::process(Tokenizer& t, int c) {
 	}
 }
 
-const std::set<std::string> keywords = { "fun", "return" };
+const std::map<std::string, TokenType> keywords = {
+	{"fun", TokenType::KEY_FUN}, 
+	{"return", TokenType::KEY_RETURN} 
+};
 
 void Ident::process(Tokenizer& t, int c) {
 	if(std::isalnum(c) != 0 || c == '_') {
 		t.add(c);
 	} else {
-		t.pushToken(keywords.contains(t.buffer) ? TokenType::KEYWORD : TokenType::IDENTIFIER);
+		if(keywords.contains(t.buffer)) {
+			t.buffer.clear();
+			t.pushToken(keywords.at(t.buffer));
+		} else {
+			t.pushToken(TokenType::IDENTIFIER);
+		}
 		t.resetState();
 		t.repeat();
 	}
 }
 
-const std::set<std::string> symbols = { ";", "(", ")", "[", "]", "{", "}", "->", "=", "+", "-", "==", "<", ">", "<=", ">=", "!=", "++", "--", "+=", "-=", "*=", "/=", "." };
+const std::map<std::string, TokenType> symbols = {
+	{";", TokenType::SEMICOLON}, 
+	{"(", TokenType::PAREN_L},
+	{")", TokenType::PAREN_R},
+	{"+", TokenType::OP_PLUS},
+	{"-", TokenType::OP_MINUS}
+};
 
 void Symbol::process(Tokenizer& t, int c) {
 	if(std::ispunct(c) != 0 && c != '\"' && (t.buffer.empty() || c != '.')) {
@@ -126,26 +143,27 @@ void Symbol::process(Tokenizer& t, int c) {
 		return;
 	}
 	std::string buffer = t.buffer;
+	t.buffer.clear();
 
 	while(!buffer.empty()) {
 		std::string longestMatch;
-		for (const auto &entry : symbols) {
-			const std::string &mapStr = entry;
+		TokenType tokenType = TokenType::INVALID;
+		for (const auto& [mapStr, mapType] : symbols) {
 			if (buffer.starts_with(mapStr)) {
 				longestMatch = mapStr;
+				tokenType = mapType;
 			}
 		}
 
-		if (longestMatch.empty()) {
-			std::string err = "Invalid symbol '";
+		if (tokenType == TokenType::INVALID) {
+			std::string err = "Invalid character '";
 			err += buffer;
 			err += "' could not be interpreted as a symbol at line " + std::to_string(t.line) + ", column " + std::to_string(t.column);
 			throw std::runtime_error(err);
 		}
 
 		buffer = buffer.substr(longestMatch.length());
-		t.buffer = longestMatch;
-		t.pushToken(TokenType::SYMBOL);
+		t.pushToken(tokenType);
 	}
 
 	t.resetState();

@@ -8,11 +8,17 @@ namespace elc {
 
 enum class TokenType {
 	INVALID,
-	KEYWORD,
-	SYMBOL,
+	END,
 	IDENTIFIER,
 	NUMERAL,
-	STRING
+	STRING,
+	KEY_FUN,
+	KEY_RETURN,
+	SEMICOLON,
+	PAREN_L,
+	PAREN_R,
+	OP_PLUS,
+	OP_MINUS,
 };
 
 struct Token {
