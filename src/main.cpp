@@ -1,4 +1,5 @@
 #include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -35,13 +36,18 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
+		std::cout << "|||Lexer stage|||\n";
 		auto tokens = elc::tokenize(file);
 		file.close();
-
 		for(auto& token : tokens) {
 			std::cout << token << "\n";
 		}
 
+		std::cout << "|||Parser stage|||\n";
+		auto prog = elc::parse(tokens);
+		for(auto& e : prog.expressions) {
+			std::cout << e->toString() << "\n";
+		}
 	}
 
 }

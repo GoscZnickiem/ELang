@@ -3,18 +3,21 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace elc::ast {
 
-struct Expression {
-	Expression(const Expression &) = default;
-	Expression(Expression &&) = delete;
-	Expression &operator=(const Expression &) = default;
-	Expression &operator=(Expression &&) = delete;
-	virtual ~Expression() = default;
+struct Node {
+	Node(const Node&) = default;
+	Node(Node&&) = delete;
+	Node &operator=(const Node&) = default;
+	Node &operator=(Node&&) = delete;
+	virtual ~Node() = default;
 
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
+
+struct Expression : public Node { };
 
 struct Numeral : public Expression {
 	char type;
@@ -29,6 +32,10 @@ struct BiOperator : public Expression {
 	std::string operation;
 
 	[[nodiscard]] std::string toString() const final;
+};
+
+struct Unit {
+	std::vector<std::unique_ptr<Expression>> expressions;
 };
 
 }

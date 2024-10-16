@@ -26,4 +26,8 @@ std::ostream& operator<<(std::ostream& os, const Token& token) {
 	return os;
 }
 
+std::string tokenTypeToString(TokenType type) {
+	return convert.at(type);
+}
+
 }

@@ -1,13 +1,14 @@
 #ifndef _ELC_PARSER_PARSER_
 #define _ELC_PARSER_PARSER_
 
+#include "ast.hpp"
 #include "tokens.hpp"
 
 #include <vector>
 
 namespace elc {
 
-void parse(std::vector<Token>& tokens);
+ast::Unit parse(std::vector<Token>& tokens);
 
 }
 

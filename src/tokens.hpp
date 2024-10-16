@@ -32,6 +32,8 @@ struct Token {
 
 std::ostream& operator<<(std::ostream& os, const Token& token);
 
+std::string tokenTypeToString(TokenType type);
+
 }
 
 #endif // !_ELC_TOKENS_
