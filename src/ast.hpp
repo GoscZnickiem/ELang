@@ -8,6 +8,7 @@
 namespace elc::ast {
 
 struct Node {
+	Node() = default;
 	Node(const Node&) = default;
 	Node(Node&&) = delete;
 	Node &operator=(const Node&) = default;
@@ -20,16 +21,37 @@ struct Node {
 struct Expression : public Node { };
 
 struct Numeral : public Expression {
-	char type;
+	explicit Numeral(std::string v);
 	std::string value;
 
 	[[nodiscard]] std::string toString() const final;
 };
 
+enum class ULeftOp {
+	MINUS
+};
+
+struct ULeftOperator : public Expression {
+	ULeftOperator(std::unique_ptr<Expression>&& e, ULeftOp o);
+	ULeftOperator(std::unique_ptr<Expression>& e, ULeftOp o);
+
+	std::unique_ptr<Expression> expr;
+	ULeftOp op;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+enum class BiOp {
+	PLUS, MINUS, MULT, DIV
+};
+
 struct BiOperator : public Expression {
+	BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, BiOp o);
+	BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, BiOp o);
+
 	std::unique_ptr<Expression> left;
 	std::unique_ptr<Expression> right;
-	std::string operation;
+	BiOp op;
 
 	[[nodiscard]] std::string toString() const final;
 };

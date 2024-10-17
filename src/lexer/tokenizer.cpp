@@ -15,6 +15,7 @@ Tokenizer::Tokenizer(std::istream* src) : source(src) {
 }
 
 std::vector<Token> Tokenizer::tokenize() {
+	tokens.emplace_back(TokenType::START, 0, 0, 0, "");
 	auto c = source->get();
 	while(!source->eof()) {
 		state->process(*this, c);

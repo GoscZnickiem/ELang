@@ -8,6 +8,7 @@ namespace elc {
 
 enum class TokenType {
 	INVALID,
+	START,
 	END,
 	IDENTIFIER,
 	NUMERAL,
@@ -19,6 +20,8 @@ enum class TokenType {
 	PAREN_R,
 	OP_PLUS,
 	OP_MINUS,
+	OP_MULT,
+	OP_DIV,
 };
 
 struct Token {

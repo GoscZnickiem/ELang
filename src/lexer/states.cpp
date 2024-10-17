@@ -134,7 +134,9 @@ const std::map<std::string, TokenType> symbols = {
 	{"(", TokenType::PAREN_L},
 	{")", TokenType::PAREN_R},
 	{"+", TokenType::OP_PLUS},
-	{"-", TokenType::OP_MINUS}
+	{"-", TokenType::OP_MINUS},
+	{"*", TokenType::OP_MULT},
+	{"/", TokenType::OP_DIV}
 };
 
 void Symbol::process(Tokenizer& t, int c) {

@@ -8,6 +8,7 @@ namespace elc {
 
 const std::map<TokenType, std::string> convert = {
 	{ TokenType::INVALID, "Invalid" },
+	{ TokenType::START, "START" },
 	{ TokenType::END, "END" },
 	{ TokenType::IDENTIFIER, "Identifier" },
 	{ TokenType::NUMERAL, "Numeral" },
@@ -18,7 +19,9 @@ const std::map<TokenType, std::string> convert = {
 	{ TokenType::PAREN_L, "(" },
 	{ TokenType::PAREN_R, ")" },
 	{ TokenType::OP_PLUS, "+" },
-	{ TokenType::OP_MINUS, "-" }
+	{ TokenType::OP_MINUS, "-" },
+	{ TokenType::OP_MULT, "*" },
+	{ TokenType::OP_DIV, "/" }
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& token) {
