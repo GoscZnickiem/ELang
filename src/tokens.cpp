@@ -18,6 +18,7 @@ std::string convert(TokenType type) {
 		case TokenType::END:			return "END";
 		case TokenType::IDENTIFIER:		return "Identifier";
 		case TokenType::NUMERAL:		return "Numeral";
+		case TokenType::BOOL:			return "Bool";
 		case TokenType::STRING:			return "String";
 		default:
 			if(isInMap(keywords, type)) return "Keyword";

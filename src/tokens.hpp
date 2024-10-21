@@ -13,6 +13,7 @@ enum class TokenType {
 	END,
 	IDENTIFIER,
 	NUMERAL,
+	BOOL,
 	STRING,
 	KEY_FUN,
 	KEY_RETURN,
@@ -23,6 +24,7 @@ enum class TokenType {
 	OP_MINUS,
 	OP_MULT,
 	OP_DIV,
+	OP_ASSIGN,
 };
 
 const inline std::map<std::string, TokenType> symbols = {
@@ -32,10 +34,11 @@ const inline std::map<std::string, TokenType> symbols = {
 	{"+", TokenType::OP_PLUS},
 	{"-", TokenType::OP_MINUS},
 	{"*", TokenType::OP_MULT},
-	{"/", TokenType::OP_DIV}
+	{"/", TokenType::OP_DIV},
+	{"=", TokenType::OP_ASSIGN}
 };
 
-const std::map<std::string, TokenType> keywords = {
+const inline std::map<std::string, TokenType> keywords = {
 	{"fun", TokenType::KEY_FUN}, 
 	{"return", TokenType::KEY_RETURN} 
 };

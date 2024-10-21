@@ -115,6 +115,8 @@ void Ident::process(Tokenizer& t, int c) {
 	} else {
 		if(keywords.contains(t.buffer)) {
 			t.pushToken(keywords.at(t.buffer));
+		} else if(t.buffer == "true" || t.buffer == "false") {
+			t.pushToken(TokenType::BOOL);
 		} else {
 			t.pushToken(TokenType::IDENTIFIER);
 		}

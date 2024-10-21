@@ -2,8 +2,8 @@
 
 #include "ast.hpp"
 #include "tokens.hpp"
+
 #include <cstddef>
-#include <map>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -34,51 +34,26 @@ struct Parser {
 		eat();
 	}
 
-	static inline const std::map<TokenType, std::pair<int, bool>> operatorPrec = {
-		{TokenType::OP_PLUS, {3, true}},
-		{TokenType::OP_MINUS, {3, true}},
-		{TokenType::OP_MULT, {5, true}},
-		{TokenType::OP_DIV, {5, true}}
-	};
-
-	static inline const std::map<TokenType, ast::BiOp> tokenToBiOp = {
-		{TokenType::OP_PLUS, ast::BiOp::PLUS},
-		{TokenType::OP_MINUS, ast::BiOp::MINUS},
-		{TokenType::OP_MULT, ast::BiOp::MULT},
-		{TokenType::OP_DIV, ast::BiOp::DIV},
-	};
-
-	static int precedence(TokenType token) {
-		if(operatorPrec.contains(token)) {
-			return operatorPrec.at(token).first;
-		}
-		return -1;
-	}
-
-	static bool leftAssoc(TokenType token) {
-		return operatorPrec.at(token).second;
-	}
-
-	std::unique_ptr<ast::Expression> Exp(int p) {
-		auto t = P();
+	std::unique_ptr<ast::NumericalExpression> Exp(int p) {
+		auto t = Exp();
 		while(true) {
-			const int prec = precedence(next());
+			const auto [prec, leftAssoc] = ast::getBiOperatorData(next());
 			if(prec == -1 || prec < p) { break; }
-			const int q = leftAssoc(next()) ? prec + 1 : prec;
 			eat();
-			auto op = token.type;
-			auto t1 = Exp(q);
-			t = std::make_unique<ast::BiOperator>(t, t1, tokenToBiOp.at(op));
+			auto op = token.data;
+			auto t1 = Exp(leftAssoc ? prec + 1 : prec);
+			t = std::make_unique<ast::BiOperator>(t, t1, op);
 		}
 		return t;
 	}
 
-	std::unique_ptr<ast::Expression> P() {
+	std::unique_ptr<ast::NumericalExpression> Exp() {
 		if(next() == TokenType::OP_MINUS) {
-			const int q = 5; //precedence(next());
+			const auto [q, _] = ast::getUOperatorData(next());
 			eat();
+			auto op = token.data;
 			auto t = Exp(q);
-			return std::make_unique<ast::ULeftOperator>(t, ast::ULeftOp::MINUS);
+			return std::make_unique<ast::ULeftOperator>(t, op);
 		}
 		if(next() == TokenType::PAREN_L) {
 			eat();
@@ -93,7 +68,7 @@ struct Parser {
 		eat();
 		std::stringstream ss;
 		ss << token;
-		throw std::runtime_error("some error in P. I encountered " + ss.str() + ")");
+		throw std::runtime_error("some error in Exp. I encountered " + ss.str() + ")");
 	}
 
 	ast::Unit parse() {

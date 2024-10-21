@@ -1,63 +1,82 @@
 #ifndef _ELC_AST_
 #define _ELC_AST_
 
+#include "tokens.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace elc::ast {
 
+std::pair<int, bool> getBiOperatorData(TokenType token);
+
+std::pair<int, int> getUOperatorData(TokenType token);
+
 struct Node {
 	Node() = default;
 	Node(const Node&) = default;
 	Node(Node&&) = delete;
 	Node &operator=(const Node&) = default;
-	Node &operator=(Node&&) = delete;
+	Node &operator=(Node&&) = default;
 	virtual ~Node() = default;
 
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
-struct Expression : public Node { };
+struct Declaration : public Node {
+	explicit Declaration(std::string t, std::string n);
+	std::string type;
+	std::string name;
 
-struct Numeral : public Expression {
+	[[nodiscard]] std::string toString() const final;
+};
+
+
+struct NumericalExpression : public Node { };
+
+struct Numeral : public NumericalExpression {
 	explicit Numeral(std::string v);
 	std::string value;
 
 	[[nodiscard]] std::string toString() const final;
 };
 
-enum class ULeftOp {
-	MINUS
-};
+struct ULeftOperator : public NumericalExpression {
+	ULeftOperator(std::unique_ptr<NumericalExpression>&& e, std::string o);
+	ULeftOperator(std::unique_ptr<NumericalExpression>& e, std::string o);
 
-struct ULeftOperator : public Expression {
-	ULeftOperator(std::unique_ptr<Expression>&& e, ULeftOp o);
-	ULeftOperator(std::unique_ptr<Expression>& e, ULeftOp o);
-
-	std::unique_ptr<Expression> expr;
-	ULeftOp op;
+	std::unique_ptr<NumericalExpression> expr;
+	std::string op;
 
 	[[nodiscard]] std::string toString() const final;
 };
 
-enum class BiOp {
-	PLUS, MINUS, MULT, DIV
-};
+struct BiOperator : public NumericalExpression {
+	BiOperator(std::unique_ptr<NumericalExpression>&& l, std::unique_ptr<NumericalExpression>&& r, std::string o);
+	BiOperator(std::unique_ptr<NumericalExpression>& l, std::unique_ptr<NumericalExpression>& r, std::string o);
 
-struct BiOperator : public Expression {
-	BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, BiOp o);
-	BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, BiOp o);
-
-	std::unique_ptr<Expression> left;
-	std::unique_ptr<Expression> right;
-	BiOp op;
+	std::unique_ptr<NumericalExpression> left;
+	std::unique_ptr<NumericalExpression> right;
+	std::string op;
 
 	[[nodiscard]] std::string toString() const final;
 };
+
+
+
+struct BoolExpression : public Node { };
+
+struct Bool : public BoolExpression {
+	explicit Bool(bool v);
+	bool value;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
 
 struct Unit {
-	std::vector<std::unique_ptr<Expression>> expressions;
+	std::vector<std::unique_ptr<NumericalExpression>> expressions;
 };
 
 }

@@ -1,7 +1,3 @@
-S -> E ; N
-
-N -> S
-
 E -> Exp(0)
 
 Exp(p) -> P { B Exp(q) }
