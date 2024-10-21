@@ -34,7 +34,7 @@ struct Parser {
 		eat();
 	}
 
-	std::unique_ptr<ast::NumericalExpression> Exp(int p) {
+	std::unique_ptr<ast::Expression> Exp(int p) {
 		auto t = Exp();
 		while(true) {
 			const auto [prec, leftAssoc] = ast::getBiOperatorData(next());
@@ -47,7 +47,7 @@ struct Parser {
 		return t;
 	}
 
-	std::unique_ptr<ast::NumericalExpression> Exp() {
+	std::unique_ptr<ast::Expression> Exp() {
 		if(next() == TokenType::OP_MINUS) {
 			const auto [q, _] = ast::getUOperatorData(next());
 			eat();
@@ -64,6 +64,10 @@ struct Parser {
 		if(next() == TokenType::NUMERAL) {
 			eat();
 			return std::make_unique<ast::Numeral>(token.data);
+		}
+		if(next() == TokenType::BOOL) {
+			eat();
+			return std::make_unique<ast::Bool>(token.data == "true");
 		}
 		eat();
 		std::stringstream ss;

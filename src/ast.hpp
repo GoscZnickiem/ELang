@@ -33,50 +33,47 @@ struct Declaration : public Node {
 };
 
 
-struct NumericalExpression : public Node { };
+struct Expression : public Node { };
 
-struct Numeral : public NumericalExpression {
+struct Numeral : public Expression {
 	explicit Numeral(std::string v);
 	std::string value;
 
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct ULeftOperator : public NumericalExpression {
-	ULeftOperator(std::unique_ptr<NumericalExpression>&& e, std::string o);
-	ULeftOperator(std::unique_ptr<NumericalExpression>& e, std::string o);
-
-	std::unique_ptr<NumericalExpression> expr;
-	std::string op;
-
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct BiOperator : public NumericalExpression {
-	BiOperator(std::unique_ptr<NumericalExpression>&& l, std::unique_ptr<NumericalExpression>&& r, std::string o);
-	BiOperator(std::unique_ptr<NumericalExpression>& l, std::unique_ptr<NumericalExpression>& r, std::string o);
-
-	std::unique_ptr<NumericalExpression> left;
-	std::unique_ptr<NumericalExpression> right;
-	std::string op;
-
-	[[nodiscard]] std::string toString() const final;
-};
-
-
-
-struct BoolExpression : public Node { };
-
-struct Bool : public BoolExpression {
+struct Bool : public Expression {
 	explicit Bool(bool v);
 	bool value;
 
 	[[nodiscard]] std::string toString() const final;
 };
 
+struct ULeftOperator : public Expression {
+	ULeftOperator(std::unique_ptr<Expression>&& e, std::string o);
+	ULeftOperator(std::unique_ptr<Expression>& e, std::string o);
+
+	std::unique_ptr<Expression> expr;
+	std::string op;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct BiOperator : public Expression {
+	BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, std::string o);
+	BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, std::string o);
+
+	std::unique_ptr<Expression> left;
+	std::unique_ptr<Expression> right;
+	std::string op;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+
 
 struct Unit {
-	std::vector<std::unique_ptr<NumericalExpression>> expressions;
+	std::vector<std::unique_ptr<Expression>> expressions;
 };
 
 }
