@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <memory>
 #include <sstream>
-#include <utility>
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -19,8 +18,8 @@ struct Parser {
 	std::size_t index{};
 	Token token;
 
-	[[nodiscard]] TokenType next() const {
-		return (*tokens)[index + 1].type;
+	[[nodiscard]] TokenType next(std::size_t i = 1) const {
+		return (*tokens)[index + i].type;
 	}
 	void eat() {
 		if(next() != TokenType::END) {
@@ -69,18 +68,40 @@ struct Parser {
 			eat();
 			return std::make_unique<ast::Bool>(token.data == "true");
 		}
+		if(next() == TokenType::IDENTIFIER) {
+			eat();
+			return std::make_unique<ast::Variable>(token.data);
+		}
 		eat();
 		std::stringstream ss;
 		ss << token;
 		throw std::runtime_error("some error in Exp. I encountered " + ss.str() + ")");
 	}
 
-	ast::Unit parse() {
-		ast::Unit u;
-		while(next() != TokenType::END) {
-			auto e = Exp(0);
-			u.expressions.push_back(std::move(e));
+	std::unique_ptr<ast::Instruction> Instr() {
+		if(next() == TokenType::IDENTIFIER && next(2) == TokenType::IDENTIFIER) {
+			eat();
+			auto type = std::make_unique<ast::Type>(token.data);
+			eat();
+			auto name = std::make_unique<ast::Variable>(token.data);
+			if(next() == TokenType::OP_ASSIGN) {
+				eat();
+				auto exp = Exp(0);
+				expect(TokenType::SEMICOLON);
+				return std::make_unique<ast::DeclAssign>(type, name, exp);
+			}
 			expect(TokenType::SEMICOLON);
+			return std::make_unique<ast::Declaration>(type, name);
+		}
+		auto e = Exp(0);
+		expect(TokenType::SEMICOLON);
+		return e;
+	}
+
+	ast::Block parse() {
+		ast::Block u;
+		while(next() != TokenType::END) {
+			u.instructions.push_back(Instr());
 		}
 		expect(TokenType::END);
 		return u;
@@ -89,7 +110,7 @@ struct Parser {
 
 
 
-ast::Unit parse(std::vector<Token> &tokens) {
+ast::Block parse(std::vector<Token> &tokens) {
 	std::cout << "parsing...\n";
 	Parser parser(tokens);
 	return parser.parse();

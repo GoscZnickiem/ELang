@@ -10,7 +10,6 @@
 namespace elc::ast {
 
 std::pair<int, bool> getBiOperatorData(TokenType token);
-
 std::pair<int, int> getUOperatorData(TokenType token);
 
 struct Node {
@@ -24,16 +23,13 @@ struct Node {
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
-struct Declaration : public Node {
-	explicit Declaration(std::string t, std::string n);
-	std::string type;
-	std::string name;
-
-	[[nodiscard]] std::string toString() const final;
-};
 
 
-struct Expression : public Node { };
+struct Instruction : public Node { };
+
+
+
+struct Expression : public Instruction { };
 
 struct Numeral : public Expression {
 	explicit Numeral(std::string v);
@@ -45,6 +41,13 @@ struct Numeral : public Expression {
 struct Bool : public Expression {
 	explicit Bool(bool v);
 	bool value;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct Variable : public Expression {
+	explicit Variable(std::string n);
+	std::string name;
 
 	[[nodiscard]] std::string toString() const final;
 };
@@ -72,8 +75,38 @@ struct BiOperator : public Expression {
 
 
 
-struct Unit {
-	std::vector<std::unique_ptr<Expression>> expressions;
+struct Type : public Node {
+	explicit Type(std::string n);
+	std::string name;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+
+
+struct Declaration : public Instruction {
+	explicit Declaration(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
+	explicit Declaration(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
+	std::unique_ptr<Type> type;
+	std::unique_ptr<Variable> name;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct DeclAssign: public Instruction {
+	explicit DeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e);
+	explicit DeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e);
+	std::unique_ptr<Type> type;
+	std::unique_ptr<Variable> name;
+	std::unique_ptr<Expression> expr;
+
+	[[nodiscard]] std::string toString() const final;
+};
+
+
+
+struct Block {
+	std::vector<std::unique_ptr<Instruction>> instructions;
 };
 
 }

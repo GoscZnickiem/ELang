@@ -10,7 +10,7 @@ namespace elc::ast {
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 std::pair<int, bool> getBiOperatorData(TokenType token) {
 	switch (token) {
-		case TokenType::OP_ASSIGN:			return {0, false};
+		case TokenType::OP_ASSIGN:			return {1, false};
 		// other assigns
 		case TokenType::OP_OR:				return {2, true};
 		case TokenType::OP_XOR:				return {3, true};
@@ -47,51 +47,64 @@ std::pair<int, int> getUOperatorData(TokenType token) {
 
 
 
-std::string Declaration::toString() const {
-	return "Declare " + name + " of type " + type;
-}
-
-Declaration::Declaration(std::string t, std::string n) : type(std::move(t)), name(std::move(n)) {}
-
-
-
+Numeral::Numeral(std::string v) : value(std::move(v)) {}
 std::string Numeral::toString() const {
 	return value;
 }
 
-Numeral::Numeral(std::string v) : value(std::move(v)) {}
-
-
-
-std::string ULeftOperator::toString() const {
-	return "(" + op + " " + expr->toString() + ")";
-}
-
-ULeftOperator::ULeftOperator(std::unique_ptr<Expression>&& e, std::string o)
-	: expr(std::move(e)), op(std::move(o)) {}
-
-ULeftOperator::ULeftOperator(std::unique_ptr<Expression>& e, std::string o)
-	: expr(std::move(e)), op(std::move(o)) {}
-
-
-
-std::string BiOperator::toString() const {
-	return "(" + left->toString() + " " + op + " " + right->toString() + ")";
-}
-
-BiOperator::BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, std::string o)
-	: left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
-
-BiOperator::BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, std::string o)
-	: left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
-
-
-
+Bool::Bool(bool v) : value(v) {}
 std::string Bool::toString() const {
 	return value ? "true" : "false";
 }
 
-Bool::Bool(bool v) : value(v) {}
+Variable::Variable(std::string n) : name(std::move(n)) {}
+std::string Variable::toString() const {
+	return name;
+}
 
+
+
+ULeftOperator::ULeftOperator(std::unique_ptr<Expression>&& e, std::string o)
+: expr(std::move(e)), op(std::move(o)) {}
+ULeftOperator::ULeftOperator(std::unique_ptr<Expression>& e, std::string o)
+: expr(std::move(e)), op(std::move(o)) {}
+std::string ULeftOperator::toString() const {
+	return "(" + op + " " + expr->toString() + ")";
+}
+
+
+
+BiOperator::BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, std::string o)
+: left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
+BiOperator::BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, std::string o)
+: left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
+std::string BiOperator::toString() const {
+	return "(" + left->toString() + " " + op + " " + right->toString() + ")";
+}
+
+
+
+Type::Type(std::string n) : name(std::move(n)) {}
+std::string Type::toString() const {
+	return name;
+}
+
+
+
+Declaration::Declaration(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
+: type(std::move(t)), name(std::move(n)) {}
+Declaration::Declaration(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
+: type(std::move(t)), name(std::move(n)) {}
+std::string Declaration::toString() const {
+	return "Declare " + name->toString() + " of type " + type->toString();
+}
+
+DeclAssign::DeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e)
+: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
+DeclAssign::DeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e) 
+: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
+std::string DeclAssign::toString() const {
+	return "Declare " + name->toString() + " of type " + type->toString() + " = " + expr->toString();
+}
 
 }

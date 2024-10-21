@@ -12,7 +12,7 @@ enum class TokenType {
 
 	IDENTIFIER, NUMERAL, BOOL, STRING,
 
-	KEY_FUN, KEY_RETURN,
+	KEY_RETURN, KEY_FUN,
 
 	SEMICOLON, PAREN_L, PAREN_R,
 
@@ -52,8 +52,8 @@ const inline std::map<std::string, TokenType> symbols = {
 };
 
 const inline std::map<std::string, TokenType> keywords = {
-	{"fun", TokenType::KEY_FUN}, 
-	{"return", TokenType::KEY_RETURN} 
+	{"return", TokenType::KEY_RETURN},
+	{"fun", TokenType::KEY_FUN}
 };
 
 struct Token {

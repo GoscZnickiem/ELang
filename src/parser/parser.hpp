@@ -8,7 +8,7 @@
 
 namespace elc {
 
-ast::Unit parse(std::vector<Token>& tokens);
+ast::Block parse(std::vector<Token>& tokens);
 
 }
 

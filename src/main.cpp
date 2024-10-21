@@ -36,11 +36,16 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
+		std::cout << "|||Lexer stage|||\n";
 		auto tokens = elc::tokenize(file);
 		file.close();
+		for(auto& token : tokens) {
+			std::cout << token << "\n";
+		}
 
+		std::cout << "|||Parser stage|||\n";
 		auto prog = elc::parse(tokens);
-		for(auto& e : prog.expressions) {
+		for(auto& e : prog.instructions) {
 			std::cout << e->toString() << "\n";
 		}
 	}
