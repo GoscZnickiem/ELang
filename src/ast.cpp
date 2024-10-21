@@ -6,7 +6,6 @@
 
 namespace elc::ast {
 
-namespace{
 std::string opToString(ULeftOp op) {
 	switch (op) {
 		case ULeftOp::MINUS:
@@ -24,7 +23,6 @@ std::string opToString(BiOp op) {
 		case BiOp::DIV:
 			return "/";
 	}
-}
 }
 
 

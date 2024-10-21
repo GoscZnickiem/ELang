@@ -28,7 +28,7 @@ struct Parser {
 		}
 	}
 	void expect(TokenType type) {
-		if(next()!= type) {
+		if(next() != type) {
 			throw std::runtime_error("error: expected " + tokenTypeToString(type) + " but " + tokenTypeToString(next()) + " encountered");
 		}
 		eat();

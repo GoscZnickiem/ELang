@@ -1,36 +1,38 @@
 #include "tokens.hpp"
 
+#include <algorithm>
 #include <map>
 #include <iostream>
 #include <string>
 
 namespace elc {
 
-const std::map<TokenType, std::string> convert = {
-	{ TokenType::INVALID, "Invalid" },
-	{ TokenType::START, "START" },
-	{ TokenType::END, "END" },
-	{ TokenType::IDENTIFIER, "Identifier" },
-	{ TokenType::NUMERAL, "Numeral" },
-	{ TokenType::STRING, "String" },
-	{ TokenType::SEMICOLON, ";" },
-	{ TokenType::KEY_FUN, "fun" },
-	{ TokenType::KEY_RETURN, "return" },
-	{ TokenType::PAREN_L, "(" },
-	{ TokenType::PAREN_R, ")" },
-	{ TokenType::OP_PLUS, "+" },
-	{ TokenType::OP_MINUS, "-" },
-	{ TokenType::OP_MULT, "*" },
-	{ TokenType::OP_DIV, "/" }
-};
+bool isInMap(const std::map<std::string, TokenType>& map, TokenType type) {
+	return std::any_of(map.begin(), map.end(), [type](const auto& entry){ return entry.second == type; });
+}
+
+std::string convert(TokenType type) {
+	switch (type) {
+		case TokenType::INVALID:		return "Invalid";
+		case TokenType::START:			return "START";
+		case TokenType::END:			return "END";
+		case TokenType::IDENTIFIER:		return "Identifier";
+		case TokenType::NUMERAL:		return "Numeral";
+		case TokenType::STRING:			return "String";
+		default:
+			if(isInMap(keywords, type)) return "Keyword";
+			if(isInMap(symbols, type))	return "Symbol";
+			return "Unknown token type";
+	}
+}
 
 std::ostream& operator<<(std::ostream& os, const Token& token) {
-	os << convert.at(token.type) << " " << token.data << ", length: " << token.size << " at: " << token.line << ":" << token.column;
+	os << convert(token.type) << " " << token.data << ", length: " << token.data.size() << " at: " << token.line << ":" << token.column;
 	return os;
 }
 
 std::string tokenTypeToString(TokenType type) {
-	return convert.at(type);
+	return convert(type);
 }
 
 }

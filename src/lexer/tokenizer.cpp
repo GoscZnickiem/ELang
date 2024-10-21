@@ -3,6 +3,7 @@
 
 #include "tokens.hpp"
 #include <cctype>
+#include <cstddef>
 #include <iostream>
 #include <istream>
 #include <vector>
@@ -15,7 +16,7 @@ Tokenizer::Tokenizer(std::istream* src) : source(src) {
 }
 
 std::vector<Token> Tokenizer::tokenize() {
-	tokens.emplace_back(TokenType::START, 0, 0, 0, "");
+	tokens.emplace_back(TokenType::START, 0, 0, "");
 	auto c = source->get();
 	while(!source->eof()) {
 		state->process(*this, c);
@@ -32,8 +33,8 @@ std::vector<Token> Tokenizer::tokenize() {
 	return std::move(tokens);
 }
 
-void Tokenizer::pushToken(TokenType type) {
-	tokens.emplace_back(type, line, column - buffer.size(), buffer.size(), buffer);
+void Tokenizer::pushToken(TokenType type, std::size_t back) {
+	tokens.emplace_back(type, line, column - buffer.size() - back, buffer);
 	buffer.clear();
 	changeState<state::Init>();
 }

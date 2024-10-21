@@ -109,17 +109,11 @@ void Numeral::process(Tokenizer& t, int c) {
 	}
 }
 
-const std::map<std::string, TokenType> keywords = {
-	{"fun", TokenType::KEY_FUN}, 
-	{"return", TokenType::KEY_RETURN} 
-};
-
 void Ident::process(Tokenizer& t, int c) {
 	if(std::isalnum(c) != 0 || c == '_') {
 		t.add(c);
 	} else {
 		if(keywords.contains(t.buffer)) {
-			t.buffer.clear();
 			t.pushToken(keywords.at(t.buffer));
 		} else {
 			t.pushToken(TokenType::IDENTIFIER);
@@ -128,16 +122,6 @@ void Ident::process(Tokenizer& t, int c) {
 		t.repeat();
 	}
 }
-
-const std::map<std::string, TokenType> symbols = {
-	{";", TokenType::SEMICOLON}, 
-	{"(", TokenType::PAREN_L},
-	{")", TokenType::PAREN_R},
-	{"+", TokenType::OP_PLUS},
-	{"-", TokenType::OP_MINUS},
-	{"*", TokenType::OP_MULT},
-	{"/", TokenType::OP_DIV}
-};
 
 void Symbol::process(Tokenizer& t, int c) {
 	if(std::ispunct(c) != 0 && c != '\"' && (t.buffer.empty() || c != '.')) {
@@ -165,7 +149,8 @@ void Symbol::process(Tokenizer& t, int c) {
 		}
 
 		buffer = buffer.substr(longestMatch.length());
-		t.pushToken(tokenType);
+		t.buffer = longestMatch;
+		t.pushToken(tokenType, buffer.length());
 	}
 
 	t.resetState();

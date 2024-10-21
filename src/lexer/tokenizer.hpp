@@ -18,7 +18,7 @@ public:
 	explicit Tokenizer(std::istream* src);
 
 	std::vector<Token> tokenize();
-	void pushToken(TokenType type);
+	void pushToken(TokenType type, std::size_t back = 0);
 	void add(int c);
 	void repeat();
 

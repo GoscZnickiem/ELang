@@ -2,6 +2,7 @@
 #define _ELC_TOKENS_
 
 #include <cstddef>
+#include <map>
 #include <string>
 
 namespace elc {
@@ -24,11 +25,25 @@ enum class TokenType {
 	OP_DIV,
 };
 
+const inline std::map<std::string, TokenType> symbols = {
+	{";", TokenType::SEMICOLON}, 
+	{"(", TokenType::PAREN_L},
+	{")", TokenType::PAREN_R},
+	{"+", TokenType::OP_PLUS},
+	{"-", TokenType::OP_MINUS},
+	{"*", TokenType::OP_MULT},
+	{"/", TokenType::OP_DIV}
+};
+
+const std::map<std::string, TokenType> keywords = {
+	{"fun", TokenType::KEY_FUN}, 
+	{"return", TokenType::KEY_RETURN} 
+};
+
 struct Token {
 	TokenType type;
 	std::size_t line;
 	std::size_t column;
-	std::size_t size;
 
 	std::string data;
 };
