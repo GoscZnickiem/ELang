@@ -91,11 +91,11 @@ std::string Type::toString() const {
 
 
 
-Declaration::Declaration(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
+Decl::Decl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
 : type(std::move(t)), name(std::move(n)) {}
-Declaration::Declaration(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
+Decl::Decl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
 : type(std::move(t)), name(std::move(n)) {}
-std::string Declaration::toString() const {
+std::string Decl::toString() const {
 	return "Declare " + name->toString() + " of type " + type->toString();
 }
 

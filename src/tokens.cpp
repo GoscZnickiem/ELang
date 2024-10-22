@@ -7,8 +7,10 @@
 
 namespace elc {
 
+namespace {
+
 bool isInMap(const std::map<std::string, TokenType>& map, TokenType type) {
-	return std::any_of(map.begin(), map.end(), [type](const auto& entry){ return entry.second == type; });
+	return std::ranges::any_of(map, [type](const auto& entry){ return entry.second == type; });
 }
 
 std::string convert(TokenType type) {
@@ -25,6 +27,7 @@ std::string convert(TokenType type) {
 			if(isInMap(symbols, type))	return "Symbol";
 			return "Unknown token type";
 	}
+}
 }
 
 std::ostream& operator<<(std::ostream& os, const Token& token) {

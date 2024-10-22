@@ -91,7 +91,7 @@ struct Parser {
 				return std::make_unique<ast::DeclAssign>(type, name, exp);
 			}
 			expect(TokenType::SEMICOLON);
-			return std::make_unique<ast::Declaration>(type, name);
+			return std::make_unique<ast::Decl>(type, name);
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
