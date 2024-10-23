@@ -1,7 +1,10 @@
+#include "ast.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
+#include "tokens.hpp"
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 
 int main(int argc, char *argv[]) {
@@ -36,16 +39,31 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		std::cout << "|||Lexer stage|||\n";
-		auto tokens = elc::tokenize(file);
+		std::vector<elc::Token> tokens;
+		try {
+			tokens = elc::tokenize(file);
+		} catch (std::runtime_error& e) {
+			for(auto& token : tokens) {
+				std::cout << token << "\n";
+			}
+			std::cerr << "\033[1;31m================\n";
+			std::cout << "Lexing error:\033[0m\n";
+			std::cerr << e.what() << "\n";
+		}
 		file.close();
-		for(auto& token : tokens) {
-			std::cout << token << "\n";
+
+		elc::ast::Unit prog;
+		try {
+			prog = elc::parse(tokens);
+		} catch (std::runtime_error& e) {
+			std::cerr << "\033[1;31m================\n";
+			std::cout << "Parsing error:\033[0m\n";
+			std::cerr << e.what() << "\n";
+			continue;
 		}
 
-		std::cout << "|||Parser stage|||\n";
-		auto prog = elc::parse(tokens);
-		for(auto& e : prog.instructions) {
+		std::cout << "Listing this stuff\n";
+		for(auto& e : prog.globals) {
 			std::cout << e->toString() << "\n";
 		}
 	}

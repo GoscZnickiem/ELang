@@ -1,14 +1,2 @@
 int x = 3;
-
-fun f() -> int {
-
-}
-
-class c {
-	rzeczy
-}
-
-fun main() -> int {
-	int x = 3;
-	x = 4;
-}
+x = 14;

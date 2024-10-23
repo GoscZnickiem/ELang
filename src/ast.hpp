@@ -24,15 +24,7 @@ struct Node {
 
 
 
-struct Jerzy : public Node { };
-
-
-
-struct Marcinkowski : public Node { };
-
-
-
-struct Instruction : public Jerzy { };
+struct Instruction : public Node { };
 
 
 
@@ -85,32 +77,41 @@ struct Type : public Node {
 
 struct Declaration : public Instruction { };
 
-struct Decl : public Instruction {
-	explicit Decl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
-	explicit Decl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
+struct VarDecl : public Declaration {
+	explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
+	explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
 	std::unique_ptr<Type> type;
 	std::unique_ptr<Variable> name;
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct DeclAssign: public Instruction {
-	explicit DeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e);
-	explicit DeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e);
+struct VarDeclAssign: public Declaration {
+	explicit VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e);
+	explicit VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e);
 	std::unique_ptr<Type> type;
 	std::unique_ptr<Variable> name;
 	std::unique_ptr<Expression> expr;
 	[[nodiscard]] std::string toString() const final;
 };
 
+struct FunDecl : public Declaration {
+	// explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
+	// explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
+	// std::unique_ptr<Type> type;
+	// std::unique_ptr<Variable> name;
+	// [[nodiscard]] std::string toString() const final;
+};
 
 
-struct Block : public Jerzy {
+
+struct Block : public Instruction {
+	Block() = default;
 	std::vector<std::unique_ptr<Instruction>> instructions;
+	[[nodiscard]] std::string toString() const final;
 };
 
 struct Unit {
-	std::vector<std::unique_ptr<Declaration>> varDeclarations;
-	std::vector<std::unique_ptr<FunctionDeclaration>> functionDeclarations;
+	std::vector<std::unique_ptr<Instruction>> globals;
 };
 
 

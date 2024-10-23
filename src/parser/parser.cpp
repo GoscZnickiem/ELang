@@ -6,8 +6,9 @@
 #include <cstddef>
 #include <memory>
 #include <sstream>
+#include <utility>
+#include <variant>
 #include <vector>
-#include <iostream>
 #include <stdexcept>
 
 namespace elc {
@@ -78,7 +79,7 @@ struct Parser {
 		throw std::runtime_error("some error in Exp. I encountered " + ss.str() + ")");
 	}
 
-	std::unique_ptr<ast::Instruction> Instr() {
+	std::variant<std::unique_ptr<ast::Instruction>, std::unique_ptr<ast::Declaration>> Instr() {
 		if(next() == TokenType::IDENTIFIER && next(2) == TokenType::IDENTIFIER) {
 			eat();
 			auto type = std::make_unique<ast::Type>(token.data);
@@ -88,30 +89,47 @@ struct Parser {
 				eat();
 				auto exp = Exp(0);
 				expect(TokenType::SEMICOLON);
-				return std::make_unique<ast::DeclAssign>(type, name, exp);
+				return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::VarDeclAssign>(type, name, exp));
 			}
 			expect(TokenType::SEMICOLON);
-			return std::make_unique<ast::Decl>(type, name);
+			return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::VarDecl>(type, name));
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
 		return e;
 	}
 
-	ast::Block parse() {
-		ast::Block u;
+	std::unique_ptr<ast::Declaration> TopInstr() {
+		auto i = Instr();
+		std::unique_ptr<ast::Declaration> decl;
+		std::visit(visitor{
+			[&](std::unique_ptr<ast::Declaration>& i) { decl = std::move(i); },
+			[]([[maybe_unused]] std::unique_ptr<ast::Instruction>& i) { 
+				throw std::runtime_error("error: expected global symbol declaration.");
+			}
+		}, i);
+		return decl;
+	}
+
+
+	ast::Unit parse() {
+		ast::Unit u;
 		while(next() != TokenType::END) {
-			u.instructions.push_back(Instr());
+			u.globals.push_back(TopInstr()); 
 		}
 		expect(TokenType::END);
 		return u;
 	}
+
+	template<typename ... Callable>
+	struct visitor : Callable... {
+		using Callable::operator()...;
+	};
 };
 
 
 
-ast::Block parse(std::vector<Token> &tokens) {
-	std::cout << "parsing...\n";
+ast::Unit parse(std::vector<Token> &tokens) {
 	Parser parser(tokens);
 	return parser.parse();
 }

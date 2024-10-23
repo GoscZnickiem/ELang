@@ -91,20 +91,30 @@ std::string Type::toString() const {
 
 
 
-Decl::Decl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
+VarDecl::VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
 : type(std::move(t)), name(std::move(n)) {}
-Decl::Decl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
+VarDecl::VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
 : type(std::move(t)), name(std::move(n)) {}
-std::string Decl::toString() const {
+std::string VarDecl::toString() const {
 	return "Declare " + name->toString() + " of type " + type->toString();
 }
 
-DeclAssign::DeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e)
+VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e)
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-DeclAssign::DeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e) 
+VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e) 
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-std::string DeclAssign::toString() const {
+std::string VarDeclAssign::toString() const {
 	return "Declare " + name->toString() + " of type " + type->toString() + " = " + expr->toString();
+}
+
+
+
+std::string Block::toString() const {
+	std::string r;
+	for(const auto& i : instructions) {
+		r += i->toString() + "\n";
+	}
+	return r;
 }
 
 }
