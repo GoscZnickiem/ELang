@@ -12,6 +12,7 @@ namespace elc::ast {
 std::pair<int, bool> getBiOperatorData(TokenType token);
 std::pair<int, int> getUOperatorData(TokenType token);
 
+
 struct Node {
 	Node() = default;
 	Node(const Node&) = default;
@@ -42,8 +43,8 @@ struct Bool : public Expression {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct Variable : public Expression {
-	explicit Variable(std::string n);
+struct Identifier : public Expression {
+	explicit Identifier(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
 };
@@ -65,6 +66,35 @@ struct BiOperator : public Expression {
 	[[nodiscard]] std::string toString() const final;
 };
 
+using ArgumentList = std::vector<std::unique_ptr<Expression>>;
+
+struct FunCall : public Expression {
+	explicit FunCall(std::unique_ptr<Identifier>&& n, ArgumentList&& args);
+	explicit FunCall(std::unique_ptr<Identifier>& n, ArgumentList& args);
+	std::unique_ptr<Identifier> name;
+	ArgumentList arguments;
+	[[nodiscard]] std::string toString() const final;
+};
+
+
+
+struct Return : public Instruction {
+	explicit Return(std::unique_ptr<Expression>&& e);
+	explicit Return(std::unique_ptr<Expression>& e);
+	std::unique_ptr<Expression> expr;
+	[[nodiscard]] std::string toString() const final;
+};
+
+
+
+
+
+struct Block : public Instruction {
+	Block() = default;
+	std::vector<std::unique_ptr<Instruction>> instructions;
+	[[nodiscard]] std::string toString() const final;
+};
+
 
 
 struct Type : public Node {
@@ -78,37 +108,36 @@ struct Type : public Node {
 struct Declaration : public Instruction { };
 
 struct VarDecl : public Declaration {
-	explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
-	explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
+	explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n);
+	explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n);
 	std::unique_ptr<Type> type;
-	std::unique_ptr<Variable> name;
+	std::unique_ptr<Identifier> name;
 	[[nodiscard]] std::string toString() const final;
 };
 
 struct VarDeclAssign: public Declaration {
-	explicit VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e);
-	explicit VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e);
+	explicit VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n, std::unique_ptr<Expression>&& e);
+	explicit VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n, std::unique_ptr<Expression>& e);
 	std::unique_ptr<Type> type;
-	std::unique_ptr<Variable> name;
+	std::unique_ptr<Identifier> name;
 	std::unique_ptr<Expression> expr;
 	[[nodiscard]] std::string toString() const final;
 };
 
+using ArgumentDeclList = std::vector<std::pair<std::unique_ptr<Type>, std::unique_ptr<Identifier>>>;
+
 struct FunDecl : public Declaration {
-	// explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n);
-	// explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n);
-	// std::unique_ptr<Type> type;
-	// std::unique_ptr<Variable> name;
-	// [[nodiscard]] std::string toString() const final;
-};
-
-
-
-struct Block : public Instruction {
-	Block() = default;
-	std::vector<std::unique_ptr<Instruction>> instructions;
+	explicit FunDecl(std::unique_ptr<Identifier>&& n, std::unique_ptr<Type>&& t, ArgumentDeclList&& args, Block&& b);
+	explicit FunDecl( std::unique_ptr<Identifier>& n, std::unique_ptr<Type>& t, ArgumentDeclList& args, Block& b);
+	std::unique_ptr<Identifier> name;
+	std::unique_ptr<Type> returnType;
+	ArgumentDeclList arguments;
+	Block body;
 	[[nodiscard]] std::string toString() const final;
 };
+
+
+
 
 struct Unit {
 	std::vector<std::unique_ptr<Instruction>> globals;

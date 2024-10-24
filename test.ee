@@ -1,2 +1,18 @@
 int x = 3;
-x = 14;
+
+fun g() -> double {
+	4
+	return 7;
+}
+
+fun f(int a, double b) -> int {
+	int y = g();
+	x = y = y * a + x;
+	return x + y * b;
+}
+
+fun main() -> int {
+	x = 17 + g() * g();
+	return f(f(2 - 1, 15.0), 4.4);
+}
+

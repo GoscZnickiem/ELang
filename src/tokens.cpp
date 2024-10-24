@@ -22,6 +22,11 @@ std::string convert(TokenType type) {
 		case TokenType::NUMERAL:		return "Numeral";
 		case TokenType::BOOL:			return "Bool";
 		case TokenType::STRING:			return "String";
+		case TokenType::PAREN_L:		return "(";
+		case TokenType::PAREN_R:		return ")";
+		case TokenType::BRACE_L:		return "{";
+		case TokenType::BRACE_R:		return "}";
+		case TokenType::ARROW_RIGHT:	return "->";
 		default:
 			if(isInMap(keywords, type)) return "Keyword";
 			if(isInMap(symbols, type))	return "Symbol";

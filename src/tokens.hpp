@@ -14,19 +14,24 @@ enum class TokenType {
 
 	KEY_RETURN, KEY_FUN,
 
-	SEMICOLON, PAREN_L, PAREN_R,
+	SEMICOLON, COMMA, PAREN_L, PAREN_R, BRACE_L, BRACE_R,
 
 	OP_ASSIGN, 
 	OP_PLUS, OP_MINUS, OP_MULT, OP_DIV, OP_MODULO,
 	OP_BITAND, OP_BITOR, OP_BITXOR, OP_BITNEGATE, OP_BITSHIFTLEFT, OP_BITSHIFTRIGHT,
 	OP_EQUALS, OP_NOTEQUALS, OP_LESS, OP_LESSEQUAL, OP_GREATER, OP_GREATEREQUAL,
-	OP_AND, OP_OR, OP_XOR, OP_NEGATE
+	OP_AND, OP_OR, OP_XOR, OP_NEGATE,
+
+	ARROW_RIGHT
 };
 
 const inline std::map<std::string, TokenType> symbols = {
 	{";", TokenType::SEMICOLON}, 
+	{",", TokenType::COMMA}, 
 	{"(", TokenType::PAREN_L},
 	{")", TokenType::PAREN_R},
+	{"{", TokenType::BRACE_L},
+	{"}", TokenType::BRACE_R},
 	{"=", TokenType::OP_ASSIGN},
 	{"+", TokenType::OP_PLUS},
 	{"-", TokenType::OP_MINUS},
@@ -48,7 +53,8 @@ const inline std::map<std::string, TokenType> symbols = {
 	{"&&", TokenType::OP_AND},
 	{"||", TokenType::OP_OR},
 	{"^^", TokenType::OP_XOR},
-	{"!", TokenType::OP_NEGATE}
+	{"!", TokenType::OP_NEGATE},
+	{"->", TokenType::ARROW_RIGHT}
 };
 
 const inline std::map<std::string, TokenType> keywords = {

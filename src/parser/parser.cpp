@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <memory>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -29,7 +30,11 @@ struct Parser {
 	}
 	void expect(TokenType type) {
 		if(next() != type) {
-			throw std::runtime_error("error: expected " + tokenTypeToString(type) + " but " + tokenTypeToString(next()) + " encountered");
+			throw std::runtime_error("error (at line: " 
+							+ std::to_string((*tokens)[index+1].line) + 
+							", column: " + std::to_string((*tokens)[index+1].column) + 
+							"): expected " + tokenTypeToString(type) + 
+							" but " + tokenTypeToString(next()) + " encountered");
 		}
 		eat();
 	}
@@ -71,7 +76,12 @@ struct Parser {
 		}
 		if(next() == TokenType::IDENTIFIER) {
 			eat();
-			return std::make_unique<ast::Variable>(token.data);
+			if(next() == TokenType::PAREN_L) {
+				auto name = std::make_unique<ast::Identifier>(token.data);
+				auto args = ArgList();
+				return std::make_unique<ast::FunCall>(name, args);
+			}
+			return std::make_unique<ast::Identifier>(token.data);
 		}
 		eat();
 		std::stringstream ss;
@@ -79,12 +89,56 @@ struct Parser {
 		throw std::runtime_error("some error in Exp. I encountered " + ss.str() + ")");
 	}
 
-	std::variant<std::unique_ptr<ast::Instruction>, std::unique_ptr<ast::Declaration>> Instr() {
+	ast::ArgumentDeclList ArgDeclList() {
+		ast::ArgumentDeclList list;
+		expect(TokenType::PAREN_L);
+		while(next() != TokenType::PAREN_R) {
+			expect(TokenType::IDENTIFIER);
+			auto type = std::make_unique<ast::Type>(token.data);
+			expect(TokenType::IDENTIFIER);
+			auto name = std::make_unique<ast::Identifier>(token.data);
+			list.emplace_back(std::move(type), std::move(name));
+			if(next() == TokenType::COMMA) {
+				eat();
+				continue;
+			}
+			break;
+		}
+		expect(TokenType::PAREN_R);
+		return std::move(list);
+	}
+
+	ast::ArgumentList ArgList() {
+		ast::ArgumentList list;
+		expect(TokenType::PAREN_L);
+		while(next() != TokenType::PAREN_R) {
+			list.emplace_back(Exp(0));
+			if(next() == TokenType::COMMA) {
+				eat();
+				continue;
+			}
+			break;
+		}
+		expect(TokenType::PAREN_R);
+		return std::move(list);
+	}
+
+	ast::Block Block() {
+		ast::Block block;
+		expect(TokenType::BRACE_L);
+		while(next() != TokenType::BRACE_R) {
+			block.instructions.push_back(Instr()); 
+		}
+		eat();
+		return std::move(block);
+	}
+
+	std::variant<std::unique_ptr<ast::Instruction>, std::unique_ptr<ast::Declaration>> AnyInstr() {
 		if(next() == TokenType::IDENTIFIER && next(2) == TokenType::IDENTIFIER) {
 			eat();
 			auto type = std::make_unique<ast::Type>(token.data);
 			eat();
-			auto name = std::make_unique<ast::Variable>(token.data);
+			auto name = std::make_unique<ast::Identifier>(token.data);
 			if(next() == TokenType::OP_ASSIGN) {
 				eat();
 				auto exp = Exp(0);
@@ -94,13 +148,40 @@ struct Parser {
 			expect(TokenType::SEMICOLON);
 			return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::VarDecl>(type, name));
 		}
+		if(next() == TokenType::KEY_FUN) {
+			eat();
+			expect(TokenType::IDENTIFIER);
+			auto name = std::make_unique<ast::Identifier>(token.data);
+			auto args = ArgDeclList();
+			expect(TokenType::ARROW_RIGHT);
+			expect(TokenType::IDENTIFIER);
+			auto returnType = std::make_unique<ast::Type>(token.data);
+			auto block = Block();
+			return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::FunDecl>(name, returnType, args, block));
+		}
+		if(next() == TokenType::KEY_RETURN) {
+			eat();
+			auto e = Exp(0);
+			expect(TokenType::SEMICOLON);
+			return std::make_unique<ast::Return>(std::move(e));
+		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
 		return e;
 	}
 
+	std::unique_ptr<ast::Instruction> Instr() {
+		auto a = AnyInstr();
+		std::unique_ptr<ast::Instruction> i;
+		std::visit(visitor{
+			[&](std::unique_ptr<ast::Declaration>& a) { i = std::move(a); },
+			[&](std::unique_ptr<ast::Instruction>& a) { i = std::move(a); }
+		}, a);
+		return i;
+	}
+
 	std::unique_ptr<ast::Declaration> TopInstr() {
-		auto i = Instr();
+		auto i = AnyInstr();
 		std::unique_ptr<ast::Declaration> decl;
 		std::visit(visitor{
 			[&](std::unique_ptr<ast::Declaration>& i) { decl = std::move(i); },

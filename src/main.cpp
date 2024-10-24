@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		std::cout << "Listing this stuff\n";
 		for(auto& e : prog.globals) {
 			std::cout << e->toString() << "\n";
 		}

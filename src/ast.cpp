@@ -57,8 +57,8 @@ std::string Bool::toString() const {
 	return value ? "true" : "false";
 }
 
-Variable::Variable(std::string n) : name(std::move(n)) {}
-std::string Variable::toString() const {
+Identifier::Identifier(std::string n) : name(std::move(n)) {}
+std::string Identifier::toString() const {
 	return name;
 }
 
@@ -84,27 +84,25 @@ std::string BiOperator::toString() const {
 
 
 
-Type::Type(std::string n) : name(std::move(n)) {}
-std::string Type::toString() const {
-	return name;
+FunCall::FunCall(std::unique_ptr<Identifier>&& n, ArgumentList&& args)
+: name(std::move(n)), arguments(std::move(args)) {}
+FunCall::FunCall(std::unique_ptr<Identifier>& n, ArgumentList& args)
+: name(std::move(n)), arguments(std::move(args)) {}
+std::string FunCall::toString() const {
+	std::string args;
+	bool first = true;
+	for(const auto& arg : arguments) {
+		if(first) { first = false; } else { args += ", "; }
+		args += arg->toString();
+	}
+	return "call " + name->toString() + " with (" + args + ")";
 }
 
 
-
-VarDecl::VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n)
-: type(std::move(t)), name(std::move(n)) {}
-VarDecl::VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n) 
-: type(std::move(t)), name(std::move(n)) {}
-std::string VarDecl::toString() const {
-	return "Declare " + name->toString() + " of type " + type->toString();
-}
-
-VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Variable>&& n, std::unique_ptr<Expression>&& e)
-: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Variable>& n, std::unique_ptr<Expression>& e) 
-: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-std::string VarDeclAssign::toString() const {
-	return "Declare " + name->toString() + " of type " + type->toString() + " = " + expr->toString();
+Return::Return(std::unique_ptr<Expression>&& e) : expr(std::move(e)) {}
+Return::Return(std::unique_ptr<Expression>& e) : expr(std::move(e)) {}
+std::string Return::toString() const {
+	return "return " + expr->toString();
 }
 
 
@@ -112,9 +110,48 @@ std::string VarDeclAssign::toString() const {
 std::string Block::toString() const {
 	std::string r;
 	for(const auto& i : instructions) {
-		r += i->toString() + "\n";
+		r += "\t" + i->toString() + "\n";
 	}
 	return r;
+}
+
+
+
+Type::Type(std::string n) : name(std::move(n)) {}
+std::string Type::toString() const {
+	return name;
+}
+
+
+
+VarDecl::VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n)
+: type(std::move(t)), name(std::move(n)) {}
+VarDecl::VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n) 
+: type(std::move(t)), name(std::move(n)) {}
+std::string VarDecl::toString() const {
+	return "variable " + name->toString() + " of type " + type->toString();
+}
+
+VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n, std::unique_ptr<Expression>&& e)
+: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
+VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n, std::unique_ptr<Expression>& e) 
+: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
+std::string VarDeclAssign::toString() const {
+	return "variable " + name->toString() + " of type " + type->toString() + " = " + expr->toString();
+}
+
+FunDecl::FunDecl(std::unique_ptr<Identifier>&& n, std::unique_ptr<Type>&& t, ArgumentDeclList&& args, Block&& b)
+: name(std::move(n)), returnType(std::move(t)), arguments(std::move(args)), body(std::move(b)) {}
+FunDecl::FunDecl( std::unique_ptr<Identifier>& n, std::unique_ptr<Type>& t, ArgumentDeclList& args, Block& b)
+: name(std::move(n)), returnType(std::move(t)), arguments(std::move(args)), body(std::move(b)) {}
+std::string FunDecl::toString() const {
+	std::string args;
+	bool first = true;
+	for(const auto& arg : arguments) {
+		if(first) { first = false; } else { args += ", "; }
+		args += arg.first->toString() + " " + arg.second->toString();
+	}
+	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = {\n" + body.toString() + "}";
 }
 
 }
