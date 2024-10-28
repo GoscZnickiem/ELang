@@ -19,7 +19,7 @@ void Compiler::compileUnit() {
 	module->print(llvm::outs(), nullptr);
 
 	std::error_code errCode;
-	llvm::raw_fd_ostream outStream("test", errCode);
+	llvm::raw_fd_ostream outStream("./hello", errCode);
 	module->print(outStream, nullptr);
 }
 
