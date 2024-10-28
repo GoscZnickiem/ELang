@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
 			std::cout << e->toString() << "\n";
 		}
 
+		std::cout << "\n";
 		elc::compile();
 	}
 
