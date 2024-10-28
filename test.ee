@@ -1,7 +1,6 @@
 int x = 3;
 
 fun g() -> double {
-	4
 	return 7;
 }
 

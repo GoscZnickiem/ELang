@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "compiler/compiler.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "tokens.hpp"
@@ -65,6 +66,8 @@ int main(int argc, char *argv[]) {
 		for(auto& e : prog.globals) {
 			std::cout << e->toString() << "\n";
 		}
+
+		elc::compile();
 	}
 
 }

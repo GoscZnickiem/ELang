@@ -1,3 +1,11 @@
 file(GLOB_RECURSE PROJECT_SOURCES "*.cpp" "*.hpp" "*.h")
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${LLVM_INCLUDE_DIRS})
+
+execute_process(COMMAND llvm-config --libs OUTPUT_VARIABLE LLVM_LIBRARIES_STRING)
+string(STRIP "${LLVM_LIBRARIES_STRING}" LLVM_LIBRARIES)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LLVM_LIBRARIES})
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC _GNU_SOURCE __STDC_CONSTANT_MACROS __STDC_FORMAT_MACROS __STDC_LIMIT_MACROS)

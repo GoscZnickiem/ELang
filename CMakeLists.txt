@@ -8,6 +8,8 @@ project(ELangCompiler)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
 
+find_package(LLVM REQUIRED CONFIG)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(project_warnings INTERFACE)
