@@ -120,21 +120,18 @@ struct NumeralC : public Tomasz {
 	explicit NumeralC(std::string v);
 	std::string value;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Numeral Create();
 };
 
 struct BoolC : public Tomasz {
 	explicit BoolC(bool v);
 	bool value;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Bool Create();
 };
 
 struct IdentifierC : public Tomasz {
 	explicit IdentifierC(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Identifier Create();
 };
 
 struct ULeftOperatorC : public Tomasz {
@@ -143,7 +140,6 @@ struct ULeftOperatorC : public Tomasz {
 	Expression expr;
 	std::string op;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static ULeftOperator Create();
 };
 
 struct BiOperatorC : public Tomasz {
@@ -153,7 +149,6 @@ struct BiOperatorC : public Tomasz {
 	Expression right;
 	std::string op;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static BiOperator Create();
 };
 
 struct FunCallC : public Tomasz {
@@ -162,7 +157,6 @@ struct FunCallC : public Tomasz {
 	Identifier name;
 	ArgumentList arguments;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static FunCall Create();
 };
 
 // Instructions:
@@ -170,16 +164,15 @@ struct FunCallC : public Tomasz {
 struct ReturnC : public Tomasz {
 	explicit ReturnC(Expression&& e);
 	explicit ReturnC(Expression& e);
+	ReturnC() = default;
 	Expression expr;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Return Create();
 };
 
 struct BlockC : public Tomasz {
 	BlockC() = default;
 	std::vector<Instruction> instructions;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Block Create();
 };
 
 struct VarDeclC : public Tomasz {
@@ -188,7 +181,6 @@ struct VarDeclC : public Tomasz {
 	Type type;
 	Identifier name;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static VarDecl Create();
 };
 
 struct VarDeclAssignC: public Tomasz {
@@ -198,7 +190,6 @@ struct VarDeclAssignC: public Tomasz {
 	Identifier name;
 	Expression expr;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static VarDeclAssign Create();
 };
 
 struct FunDeclC : public Tomasz {
@@ -209,7 +200,6 @@ struct FunDeclC : public Tomasz {
 	ArgumentDeclList arguments;
 	Block body;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static FunDecl Create();
 };
 
 // Other
@@ -218,7 +208,6 @@ struct TypeC : public Tomasz {
 	explicit TypeC(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
-	[[nodiscard]] static Type Create();
 };
 
 

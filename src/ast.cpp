@@ -49,8 +49,6 @@ std::pair<int, int> getUOperatorData(TokenType token) {
 
 
 
-
-
 NumeralC::NumeralC(std::string v) : value(std::move(v)) {}
 std::string NumeralC::toString() const {
 	return value;
@@ -119,7 +117,7 @@ ReturnC::ReturnC(Expression& e) : expr(std::move(e)) {}
 std::string ReturnC::toString() const {
 	return std::visit(visitor{
 		[&](auto& e) {
-			return "return" + e->toString();
+			return "return " + (e == nullptr ? "" : e->toString());
 		}
 	}, expr);
 }

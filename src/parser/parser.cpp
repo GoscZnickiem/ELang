@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <variant>
@@ -39,12 +38,15 @@ struct Parser {
 		}
 		eat();
 	}
+	void throwError() {
+
+	}
 
 	ast::Expression Exp(int p) {
 		auto t = Exp();
 		while(true) {
 			const auto [prec, leftAssoc] = ast::getBiOperatorData(next());
-			if(prec == -1 || prec < p) { break; }
+			if(prec == -1 || prec < p) break;
 			eat();
 			auto op = token.data;
 			auto t1 = Exp(leftAssoc ? prec + 1 : prec);
@@ -85,9 +87,7 @@ struct Parser {
 			return std::make_unique<ast::IdentifierC>(token.data);
 		}
 		eat();
-		std::stringstream ss;
-		ss << token;
-		throw std::runtime_error("some error in Exp. I encountered " + ss.str() + ")");
+		throw std::runtime_error("Error: expected expression. line: " + std::to_string(token.line) + ", column " + std::to_string(token.column));
 	}
 
 	ast::ArgumentDeclList ArgDeclList() {
@@ -162,15 +162,19 @@ struct Parser {
 		}
 		if(next() == TokenType::KEY_RETURN) {
 			eat();
+			if(next() == TokenType::SEMICOLON) {
+				eat();
+				return std::make_unique<ast::ReturnC>();
+			}
 			auto e = Exp(0);
 			expect(TokenType::SEMICOLON);
 			return std::make_unique<ast::ReturnC>(std::move(e));
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
-		return std::visit(visitor{
+		return std::visit(
 			[&](auto& arg) -> ast::Instruction { return std::move(arg); }
-		}, e);
+		, e);
 	}
 
 	ast::Declaration TopInstr() {
@@ -180,8 +184,9 @@ struct Parser {
 			[&](ast::VarDecl& i) { decl = std::move(i); },
 			[&](ast::VarDeclAssign& i) { decl = std::move(i); },
 			[&](ast::FunDecl& i) { decl = std::move(i); },
-			[]([[maybe_unused]] auto& i) { 
-				throw std::runtime_error("error: expected global symbol declaration.");
+			[&]([[maybe_unused]] auto& i) { 
+				eat();
+				throw std::runtime_error("Error: expected global symbol declaration. line: " + std::to_string(token.line) + ", column " + std::to_string(token.column));
 			}
 		}, i);
 		return decl;
