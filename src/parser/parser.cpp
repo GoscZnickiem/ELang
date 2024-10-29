@@ -39,7 +39,7 @@ struct Parser {
 		eat();
 	}
 
-	std::unique_ptr<ast::Expression> Exp(int p) {
+	ast::Expression Exp(int p) {
 		auto t = Exp();
 		while(true) {
 			const auto [prec, leftAssoc] = ast::getBiOperatorData(next());
@@ -47,18 +47,18 @@ struct Parser {
 			eat();
 			auto op = token.data;
 			auto t1 = Exp(leftAssoc ? prec + 1 : prec);
-			t = std::make_unique<ast::BiOperator>(t, t1, op);
+			t = std::make_unique<ast::BiOperatorC>(t, t1, op);
 		}
 		return t;
 	}
 
-	std::unique_ptr<ast::Expression> Exp() {
+	ast::Expression Exp() {
 		if(next() == TokenType::OP_MINUS) {
 			const auto [q, _] = ast::getUOperatorData(next());
 			eat();
 			auto op = token.data;
 			auto t = Exp(q);
-			return std::make_unique<ast::ULeftOperator>(t, op);
+			return std::make_unique<ast::ULeftOperatorC>(t, op);
 		}
 		if(next() == TokenType::PAREN_L) {
 			eat();
@@ -68,20 +68,20 @@ struct Parser {
 		}
 		if(next() == TokenType::NUMERAL) {
 			eat();
-			return std::make_unique<ast::Numeral>(token.data);
+			return std::make_unique<ast::NumeralC>(token.data);
 		}
 		if(next() == TokenType::BOOL) {
 			eat();
-			return std::make_unique<ast::Bool>(token.data == "true");
+			return std::make_unique<ast::BoolC>(token.data == "true");
 		}
 		if(next() == TokenType::IDENTIFIER) {
 			eat();
 			if(next() == TokenType::PAREN_L) {
-				auto name = std::make_unique<ast::Identifier>(token.data);
+				auto name = std::make_unique<ast::IdentifierC>(token.data);
 				auto args = ArgList();
-				return std::make_unique<ast::FunCall>(name, args);
+				return std::make_unique<ast::FunCallC>(name, args);
 			}
-			return std::make_unique<ast::Identifier>(token.data);
+			return std::make_unique<ast::IdentifierC>(token.data);
 		}
 		eat();
 		std::stringstream ss;
@@ -94,9 +94,9 @@ struct Parser {
 		expect(TokenType::PAREN_L);
 		while(next() != TokenType::PAREN_R) {
 			expect(TokenType::IDENTIFIER);
-			auto type = std::make_unique<ast::Type>(token.data);
+			auto type = std::make_unique<ast::TypeC>(token.data);
 			expect(TokenType::IDENTIFIER);
-			auto name = std::make_unique<ast::Identifier>(token.data);
+			auto name = std::make_unique<ast::IdentifierC>(token.data);
 			list.emplace_back(std::move(type), std::move(name));
 			if(next() == TokenType::COMMA) {
 				eat();
@@ -125,67 +125,59 @@ struct Parser {
 
 	ast::Block Block() {
 		ast::Block block;
+		const std::size_t magic = 1000;
+		block->instructions.reserve(magic);
 		expect(TokenType::BRACE_L);
 		while(next() != TokenType::BRACE_R) {
-			block.instructions.push_back(Instr()); 
+			block->instructions.emplace_back(Instr()); 
 		}
 		eat();
 		return std::move(block);
 	}
 
-	std::variant<std::unique_ptr<ast::Instruction>, std::unique_ptr<ast::Declaration>> AnyInstr() {
+	ast::Instruction Instr() {
 		if(next() == TokenType::IDENTIFIER && next(2) == TokenType::IDENTIFIER) {
 			eat();
-			auto type = std::make_unique<ast::Type>(token.data);
+			ast::Type type = std::make_unique<ast::TypeC>(token.data);
 			eat();
-			auto name = std::make_unique<ast::Identifier>(token.data);
+			ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);
 			if(next() == TokenType::OP_ASSIGN) {
 				eat();
 				auto exp = Exp(0);
 				expect(TokenType::SEMICOLON);
-				return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::VarDeclAssign>(type, name, exp));
+				return std::make_unique<ast::VarDeclAssignC>(type, name, exp);
 			}
 			expect(TokenType::SEMICOLON);
-			return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::VarDecl>(type, name));
+			return std::make_unique<ast::VarDeclC>(type, name);
 		}
 		if(next() == TokenType::KEY_FUN) {
 			eat();
 			expect(TokenType::IDENTIFIER);
-			auto name = std::make_unique<ast::Identifier>(token.data);
+			auto name = std::make_unique<ast::IdentifierC>(token.data);
 			auto args = ArgDeclList();
 			expect(TokenType::ARROW_RIGHT);
 			expect(TokenType::IDENTIFIER);
-			auto returnType = std::make_unique<ast::Type>(token.data);
+			auto returnType = std::make_unique<ast::TypeC>(token.data);
 			auto block = Block();
-			return static_cast<std::unique_ptr<ast::Declaration>>(std::make_unique<ast::FunDecl>(name, returnType, args, block));
+			return std::make_unique<ast::FunDeclC>(name, returnType, args, block);
 		}
 		if(next() == TokenType::KEY_RETURN) {
 			eat();
 			auto e = Exp(0);
 			expect(TokenType::SEMICOLON);
-			return std::make_unique<ast::Return>(std::move(e));
+			return std::make_unique<ast::ReturnC>(std::move(e));
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
 		return e;
 	}
 
-	std::unique_ptr<ast::Instruction> Instr() {
-		auto a = AnyInstr();
-		std::unique_ptr<ast::Instruction> i;
+	ast::Declaration TopInstr() {
+		auto i = Instr();
+		ast::Declaration decl;
 		std::visit(visitor{
-			[&](std::unique_ptr<ast::Declaration>& a) { i = std::move(a); },
-			[&](std::unique_ptr<ast::Instruction>& a) { i = std::move(a); }
-		}, a);
-		return i;
-	}
-
-	std::unique_ptr<ast::Declaration> TopInstr() {
-		auto i = AnyInstr();
-		std::unique_ptr<ast::Declaration> decl;
-		std::visit(visitor{
-			[&](std::unique_ptr<ast::Declaration>& i) { decl = std::move(i); },
-			[]([[maybe_unused]] std::unique_ptr<ast::Instruction>& i) { 
+			[&](ast::Declaration& i) { decl = std::move(i); },
+			[]([[maybe_unused]] auto& i) { 
 				throw std::runtime_error("error: expected global symbol declaration.");
 			}
 		}, i);
@@ -196,7 +188,7 @@ struct Parser {
 	ast::Unit parse() {
 		ast::Unit u;
 		while(next() != TokenType::END) {
-			u.globals.push_back(TopInstr()); 
+			u.globals.emplace_back(TopInstr()); 
 		}
 		expect(TokenType::END);
 		return u;

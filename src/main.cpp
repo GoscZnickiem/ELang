@@ -8,6 +8,11 @@
 #include <stdexcept>
 #include <vector>
 
+template<typename ... Callable>
+struct visitor : Callable... {
+	using Callable::operator()...;
+};
+
 int main(int argc, char *argv[]) {
 
 	if(argc < 2) {
@@ -64,7 +69,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		for(auto& e : prog.globals) {
-			std::cout << e->toString() << "\n";
+			std::cout << elc::ast::toString(e) << "\n";
 		}
 
 		std::cout << "\n";

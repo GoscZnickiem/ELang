@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace elc::ast {
@@ -12,135 +13,179 @@ namespace elc::ast {
 std::pair<int, bool> getBiOperatorData(TokenType token);
 std::pair<int, int> getUOperatorData(TokenType token);
 
+// ========================================================== //
+//				Atomic types forward declarations
+// ========================================================== //
 
-struct Node {
-	Node() = default;
-	Node(const Node&) = default;
-	Node(Node&&) = delete;
-	Node &operator=(const Node&) = default;
-	Node &operator=(Node&&) = default;
-	virtual ~Node() = default;
+struct Tomasz {
+	Tomasz() = default;
+	Tomasz(const Tomasz&) = default;
+	Tomasz(Tomasz&&) = delete;
+	Tomasz &operator=(const Tomasz&) = default;
+	Tomasz &operator=(Tomasz&&) = default;
+	virtual ~Tomasz() = default;
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
+// Atomic expressions
+struct NumeralC; struct BoolC; struct IdentifierC; struct ULeftOperatorC; struct BiOperatorC; struct FunCallC;
+using Numeral = std::unique_ptr<NumeralC>;
+using Bool = std::unique_ptr<BoolC>;
+using Identifier = std::unique_ptr<IdentifierC>;
+using ULeftOperator = std::unique_ptr<ULeftOperatorC>;
+using BiOperator = std::unique_ptr<BiOperatorC>;
+using FunCall = std::unique_ptr<FunCallC>;
+// Atomic instructions
+struct ReturnC; struct BlockC; struct VarDeclC; struct VarDeclAssignC; struct FunDeclC;
+using Return = std::unique_ptr<ReturnC>;
+using Block = std::unique_ptr<BlockC>;
+using VarDecl = std::unique_ptr<VarDeclC>;
+using VarDeclAssign = std::unique_ptr<VarDeclAssignC>;
+using FunDecl = std::unique_ptr<FunDeclC>;
+// other
+struct TypeC;
+using Type = std::unique_ptr<TypeC>;
 
+// ========================================================== //
+//						Basic structures
+// ========================================================== //
 
-struct Instruction : public Node { };
+using Expression = std::variant<
+	Numeral, Bool, Identifier, ULeftOperator, BiOperator, FunCall
+>;
 
+using Declaration = std::variant<
+	VarDecl, VarDeclAssign, FunDecl
+>;
 
+using Instruction = std::variant<
+	Expression, Declaration, Block, Return
+>;
+std::string toString(const Instruction& instruction);
 
-struct Expression : public Instruction { };
+using ArgumentList = std::vector<Expression>;
+using ArgumentDeclList = std::vector<std::pair<Type, Identifier>>;
 
-struct Numeral : public Expression {
-	explicit Numeral(std::string v);
+// ========================================================== //
+//						Atomic types
+// ========================================================== //
+
+// Expressions:
+
+struct NumeralC : public Tomasz {
+	explicit NumeralC(std::string v);
 	std::string value;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Numeral Create();
 };
 
-struct Bool : public Expression {
-	explicit Bool(bool v);
+struct BoolC : public Tomasz {
+	explicit BoolC(bool v);
 	bool value;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Bool Create();
 };
 
-struct Identifier : public Expression {
-	explicit Identifier(std::string n);
+struct IdentifierC : public Tomasz {
+	explicit IdentifierC(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Identifier Create();
 };
 
-struct ULeftOperator : public Expression {
-	ULeftOperator(std::unique_ptr<Expression>&& e, std::string o);
-	ULeftOperator(std::unique_ptr<Expression>& e, std::string o);
-	std::unique_ptr<Expression> expr;
+struct ULeftOperatorC : public Tomasz {
+	ULeftOperatorC(Expression&& e, std::string o);
+	ULeftOperatorC(Expression& e, std::string o);
+	Expression expr;
 	std::string op;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static ULeftOperator Create();
 };
 
-struct BiOperator : public Expression {
-	BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, std::string o);
-	BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, std::string o);
-	std::unique_ptr<Expression> left;
-	std::unique_ptr<Expression> right;
+struct BiOperatorC : public Tomasz {
+	BiOperatorC(Expression&& l, Expression&& r, std::string o);
+	BiOperatorC(Expression& l, Expression& r, std::string o);
+	Expression left;
+	Expression right;
 	std::string op;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static BiOperator Create();
 };
 
-using ArgumentList = std::vector<std::unique_ptr<Expression>>;
-
-struct FunCall : public Expression {
-	explicit FunCall(std::unique_ptr<Identifier>&& n, ArgumentList&& args);
-	explicit FunCall(std::unique_ptr<Identifier>& n, ArgumentList& args);
-	std::unique_ptr<Identifier> name;
+struct FunCallC : public Tomasz {
+	FunCallC(Identifier&& n, ArgumentList&& args);
+	FunCallC(Identifier& n, ArgumentList& args);
+	Identifier name;
 	ArgumentList arguments;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static FunCall Create();
 };
 
+// Instructions:
 
-
-struct Return : public Instruction {
-	explicit Return(std::unique_ptr<Expression>&& e);
-	explicit Return(std::unique_ptr<Expression>& e);
-	std::unique_ptr<Expression> expr;
+struct ReturnC : public Tomasz {
+	explicit ReturnC(Expression&& e);
+	explicit ReturnC(Expression& e);
+	Expression expr;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Return Create();
 };
 
-
-
-
-
-struct Block : public Instruction {
-	Block() = default;
-	std::vector<std::unique_ptr<Instruction>> instructions;
+struct BlockC : public Tomasz {
+	BlockC() = default;
+	std::vector<Instruction> instructions;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Block Create();
 };
 
-
-
-struct Type : public Node {
-	explicit Type(std::string n);
-	std::string name;
+struct VarDeclC : public Tomasz {
+	VarDeclC(Type&& t, Identifier&& n);
+	VarDeclC(Type& t, Identifier& n);
+	Type type;
+	Identifier name;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static VarDecl Create();
 };
 
-
-
-struct Declaration : public Instruction { };
-
-struct VarDecl : public Declaration {
-	explicit VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n);
-	explicit VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n);
-	std::unique_ptr<Type> type;
-	std::unique_ptr<Identifier> name;
+struct VarDeclAssignC: public Tomasz {
+	VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e);
+	VarDeclAssignC(Type& t, Identifier& n, Expression& e);
+	Type type;
+	Identifier name;
+	Expression expr;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static VarDeclAssign Create();
 };
 
-struct VarDeclAssign: public Declaration {
-	explicit VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n, std::unique_ptr<Expression>&& e);
-	explicit VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n, std::unique_ptr<Expression>& e);
-	std::unique_ptr<Type> type;
-	std::unique_ptr<Identifier> name;
-	std::unique_ptr<Expression> expr;
-	[[nodiscard]] std::string toString() const final;
-};
-
-using ArgumentDeclList = std::vector<std::pair<std::unique_ptr<Type>, std::unique_ptr<Identifier>>>;
-
-struct FunDecl : public Declaration {
-	explicit FunDecl(std::unique_ptr<Identifier>&& n, std::unique_ptr<Type>&& t, ArgumentDeclList&& args, Block&& b);
-	explicit FunDecl( std::unique_ptr<Identifier>& n, std::unique_ptr<Type>& t, ArgumentDeclList& args, Block& b);
-	std::unique_ptr<Identifier> name;
-	std::unique_ptr<Type> returnType;
+struct FunDeclC : public Tomasz {
+	FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b);
+	FunDeclC(Identifier& n, Type& t, ArgumentDeclList& args, Block& b);
+	Identifier name;
+	Type returnType;
 	ArgumentDeclList arguments;
 	Block body;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static FunDecl Create();
+};
+
+// Other
+
+struct TypeC : public Tomasz {
+	explicit TypeC(std::string n);
+	std::string name;
+	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] static Type Create();
 };
 
 
 
 
+// ========================================================== //
+//						Compilation Unit
+// ========================================================== //
+
 struct Unit {
-	std::vector<std::unique_ptr<Instruction>> globals;
+	std::vector<Instruction> globals;
 };
 
 

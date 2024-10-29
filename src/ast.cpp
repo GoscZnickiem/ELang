@@ -4,8 +4,14 @@
 #include <string>
 #include <utility>
 #include <memory>
+#include <variant>
 
 namespace elc::ast {
+
+template<typename ... Callable>
+struct visitor : Callable... {
+	using Callable::operator()...;
+};
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 std::pair<int, bool> getBiOperatorData(TokenType token) {
@@ -47,111 +53,149 @@ std::pair<int, int> getUOperatorData(TokenType token) {
 
 
 
-Numeral::Numeral(std::string v) : value(std::move(v)) {}
-std::string Numeral::toString() const {
+std::string toString(const Instruction& instruction) {
+	return std::visit(visitor{
+		[&](Expression& e) { 
+			return std::visit(visitor{
+				[&](auto& e2) { return e2->toString(); }
+			}, e);
+		},
+		[&](Declaration& e) { 
+			return std::visit(visitor{
+				[&](auto& e2) { return e2->toString(); }
+			}, e);
+		},
+		[&]([[maybe_unused]] auto& e) {
+			return "TODO";
+		}
+	}, instruction);
+}
+
+
+
+NumeralC::NumeralC(std::string v) : value(std::move(v)) {}
+std::string NumeralC::toString() const {
 	return value;
 }
 
-Bool::Bool(bool v) : value(v) {}
-std::string Bool::toString() const {
+BoolC::BoolC(bool v) : value(v) {}
+std::string BoolC::toString() const {
 	return value ? "true" : "false";
 }
 
-Identifier::Identifier(std::string n) : name(std::move(n)) {}
-std::string Identifier::toString() const {
+IdentifierC::IdentifierC(std::string n) : name(std::move(n)) {}
+std::string IdentifierC::toString() const {
 	return name;
 }
 
 
 
-ULeftOperator::ULeftOperator(std::unique_ptr<Expression>&& e, std::string o)
+ULeftOperatorC::ULeftOperatorC(Expression&& e, std::string o)
 : expr(std::move(e)), op(std::move(o)) {}
-ULeftOperator::ULeftOperator(std::unique_ptr<Expression>& e, std::string o)
+ULeftOperatorC::ULeftOperatorC(Expression& e, std::string o)
 : expr(std::move(e)), op(std::move(o)) {}
-std::string ULeftOperator::toString() const {
-	return "(" + op + " " + expr->toString() + ")";
+std::string ULeftOperatorC::toString() const {
+	return std::visit(visitor{
+		[&](auto& e) {
+			return "(" + op + " " + e->toString() + ")";
+		}
+	}, expr);
 }
 
 
 
-BiOperator::BiOperator(std::unique_ptr<Expression>&& l, std::unique_ptr<Expression>&& r, std::string o)
+BiOperatorC::BiOperatorC(Expression&& l, Expression&& r, std::string o)
 : left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
-BiOperator::BiOperator(std::unique_ptr<Expression>& l, std::unique_ptr<Expression>& r, std::string o)
+BiOperatorC::BiOperatorC(Expression& l, Expression& r, std::string o)
 : left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
-std::string BiOperator::toString() const {
-	return "(" + left->toString() + " " + op + " " + right->toString() + ")";
+std::string BiOperatorC::toString() const {
+	return std::visit(visitor{
+		[&](auto& l, auto& r) {
+			return "(" + l->toString() + " " + op + " " + r->toString() + ")";
+		}
+	}, left, right);
 }
 
 
 
-FunCall::FunCall(std::unique_ptr<Identifier>&& n, ArgumentList&& args)
+FunCallC::FunCallC(Identifier&& n, ArgumentList&& args)
 : name(std::move(n)), arguments(std::move(args)) {}
-FunCall::FunCall(std::unique_ptr<Identifier>& n, ArgumentList& args)
+FunCallC::FunCallC(Identifier& n, ArgumentList& args)
 : name(std::move(n)), arguments(std::move(args)) {}
-std::string FunCall::toString() const {
+std::string FunCallC::toString() const {
 	std::string args;
 	bool first = true;
 	for(const auto& arg : arguments) {
 		if(first) { first = false; } else { args += ", "; }
-		args += arg->toString();
+		args += 
+			std::visit(visitor{
+				[&](auto& e) { return e->toString(); }
+			}, arg);
 	}
 	return "call " + name->toString() + " with (" + args + ")";
 }
 
 
-Return::Return(std::unique_ptr<Expression>&& e) : expr(std::move(e)) {}
-Return::Return(std::unique_ptr<Expression>& e) : expr(std::move(e)) {}
-std::string Return::toString() const {
-	return "return " + expr->toString();
+ReturnC::ReturnC(Expression&& e) : expr(std::move(e)) {}
+ReturnC::ReturnC(Expression& e) : expr(std::move(e)) {}
+std::string ReturnC::toString() const {
+	return std::visit(visitor{
+		[&](auto& e) {
+			return "return" + e->toString();
+		}
+	}, expr);
 }
 
 
 
-std::string Block::toString() const {
+std::string BlockC::toString() const {
 	std::string r;
 	for(const auto& i : instructions) {
-		r += "\t" + i->toString() + "\n";
+		r += "\t" + ::elc::ast::toString(i) + "\n";
 	}
 	return r;
 }
 
 
 
-Type::Type(std::string n) : name(std::move(n)) {}
-std::string Type::toString() const {
+TypeC::TypeC(std::string n) : name(std::move(n)) {}
+std::string TypeC::toString() const {
 	return name;
 }
 
 
 
-VarDecl::VarDecl(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n)
+VarDeclC::VarDeclC(Type&& t, Identifier&& n)
 : type(std::move(t)), name(std::move(n)) {}
-VarDecl::VarDecl(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n) 
+VarDeclC::VarDeclC(Type& t, Identifier& n) 
 : type(std::move(t)), name(std::move(n)) {}
-std::string VarDecl::toString() const {
+std::string VarDeclC::toString() const {
 	return "variable " + name->toString() + " of type " + type->toString();
 }
 
-VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>&& t, std::unique_ptr<Identifier>&& n, std::unique_ptr<Expression>&& e)
+VarDeclAssignC::VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e)
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-VarDeclAssign::VarDeclAssign(std::unique_ptr<Type>& t, std::unique_ptr<Identifier>& n, std::unique_ptr<Expression>& e) 
+VarDeclAssignC::VarDeclAssignC(Type& t, Identifier& n, Expression& e) 
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-std::string VarDeclAssign::toString() const {
-	return "variable " + name->toString() + " of type " + type->toString() + " = " + expr->toString();
+std::string VarDeclAssignC::toString() const {
+	return "variable " + name->toString() + " of type " + type->toString() + " = " + 
+		std::visit(visitor{
+			[&](auto& e2) { return e2->toString(); }
+		}, expr);
 }
 
-FunDecl::FunDecl(std::unique_ptr<Identifier>&& n, std::unique_ptr<Type>&& t, ArgumentDeclList&& args, Block&& b)
+FunDeclC::FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b)
 : name(std::move(n)), returnType(std::move(t)), arguments(std::move(args)), body(std::move(b)) {}
-FunDecl::FunDecl( std::unique_ptr<Identifier>& n, std::unique_ptr<Type>& t, ArgumentDeclList& args, Block& b)
+FunDeclC::FunDeclC(Identifier& n, Type& t, ArgumentDeclList& args, Block& b)
 : name(std::move(n)), returnType(std::move(t)), arguments(std::move(args)), body(std::move(b)) {}
-std::string FunDecl::toString() const {
+std::string FunDeclC::toString() const {
 	std::string args;
 	bool first = true;
 	for(const auto& arg : arguments) {
 		if(first) { first = false; } else { args += ", "; }
 		args += arg.first->toString() + " " + arg.second->toString();
 	}
-	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = {\n" + body.toString() + "}";
+	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = {\n" + body->toString() + "}";
 }
 
 }
