@@ -2,6 +2,7 @@
 #define _ELC_AST_
 
 #include "tokens.hpp"
+#include "help/visitor.hpp"
 
 #include <memory>
 #include <string>
@@ -12,6 +13,41 @@ namespace elc::ast {
 
 std::pair<int, bool> getBiOperatorData(TokenType token);
 std::pair<int, int> getUOperatorData(TokenType token);
+
+template<typename T>
+concept stdvariant = requires(T a) {
+	typename std::variant_size<T>::type;
+};
+
+template<stdvariant Var1, stdvariant Var2>
+struct flatVariantBase2;
+template<typename...T, typename...U>
+struct flatVariantBase2<std::variant<T...>, std::variant<U...>> {
+	using type = std::variant<T..., U...>;
+};
+
+template<typename...Vars>
+struct flatVariantBase;
+template<stdvariant V, typename...Vars>
+struct flatVariantBase<V, Vars...>{
+	using type = typename flatVariantBase<typename flatVariantBase2<V, typename flatVariantBase<Vars...>::type>::type>::type;
+};
+template<typename T, typename...Vars>
+struct flatVariantBase<T, Vars...>{
+	using type = typename flatVariantBase<std::variant<T>, Vars...>::type;
+};
+template<stdvariant V>
+struct flatVariantBase<V>{
+	using type = V;
+};
+template<typename T>
+struct flatVariantBase<T>{
+	using type = std::variant<T>;
+};
+
+template<typename...T>
+using variant = flatVariantBase<T...>::type;
+
 
 // ========================================================== //
 //				Atomic types forward declarations
@@ -50,21 +86,29 @@ using Type = std::unique_ptr<TypeC>;
 //						Basic structures
 // ========================================================== //
 
-using Expression = std::variant<
+using Expression = variant<
 	Numeral, Bool, Identifier, ULeftOperator, BiOperator, FunCall
 >;
 
-using Declaration = std::variant<
+using Declaration = variant<
 	VarDecl, VarDeclAssign, FunDecl
 >;
 
-using Instruction = std::variant<
+using Instruction = variant<
 	Expression, Declaration, Block, Return
 >;
-std::string toString(const Instruction& instruction);
 
 using ArgumentList = std::vector<Expression>;
 using ArgumentDeclList = std::vector<std::pair<Type, Identifier>>;
+
+template<stdvariant V>
+std::string toString(const V& arg) {
+	return std::visit(visitor{
+		[&](auto& e) {
+			return e->toString();
+		}
+	}, arg);
+}
 
 // ========================================================== //
 //						Atomic types
@@ -185,7 +229,7 @@ struct TypeC : public Tomasz {
 // ========================================================== //
 
 struct Unit {
-	std::vector<Instruction> globals;
+	std::vector<Declaration> globals;
 };
 
 

@@ -2,6 +2,7 @@
 
 #include "ast.hpp"
 #include "tokens.hpp"
+#include "help/visitor.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -124,9 +125,7 @@ struct Parser {
 	}
 
 	ast::Block Block() {
-		ast::Block block;
-		const std::size_t magic = 1000;
-		block->instructions.reserve(magic);
+		ast::Block block = std::make_unique<ast::BlockC>();
 		expect(TokenType::BRACE_L);
 		while(next() != TokenType::BRACE_R) {
 			block->instructions.emplace_back(Instr()); 
@@ -169,14 +168,18 @@ struct Parser {
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
-		return e;
+		return std::visit(visitor{
+			[&](auto& arg) -> ast::Instruction { return std::move(arg); }
+		}, e);
 	}
 
 	ast::Declaration TopInstr() {
 		auto i = Instr();
 		ast::Declaration decl;
 		std::visit(visitor{
-			[&](ast::Declaration& i) { decl = std::move(i); },
+			[&](ast::VarDecl& i) { decl = std::move(i); },
+			[&](ast::VarDeclAssign& i) { decl = std::move(i); },
+			[&](ast::FunDecl& i) { decl = std::move(i); },
 			[]([[maybe_unused]] auto& i) { 
 				throw std::runtime_error("error: expected global symbol declaration.");
 			}
@@ -188,16 +191,11 @@ struct Parser {
 	ast::Unit parse() {
 		ast::Unit u;
 		while(next() != TokenType::END) {
-			u.globals.emplace_back(TopInstr()); 
+			u.globals.push_back(TopInstr()); 
 		}
 		expect(TokenType::END);
 		return u;
 	}
-
-	template<typename ... Callable>
-	struct visitor : Callable... {
-		using Callable::operator()...;
-	};
 };
 
 

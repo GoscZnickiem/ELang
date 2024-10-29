@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "tokens.hpp"
+#include "help/visitor.hpp"
 
 #include <string>
 #include <utility>
@@ -7,11 +8,6 @@
 #include <variant>
 
 namespace elc::ast {
-
-template<typename ... Callable>
-struct visitor : Callable... {
-	using Callable::operator()...;
-};
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 std::pair<int, bool> getBiOperatorData(TokenType token) {
@@ -52,24 +48,6 @@ std::pair<int, int> getUOperatorData(TokenType token) {
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 
 
-
-std::string toString(const Instruction& instruction) {
-	return std::visit(visitor{
-		[&](Expression& e) { 
-			return std::visit(visitor{
-				[&](auto& e2) { return e2->toString(); }
-			}, e);
-		},
-		[&](Declaration& e) { 
-			return std::visit(visitor{
-				[&](auto& e2) { return e2->toString(); }
-			}, e);
-		},
-		[&]([[maybe_unused]] auto& e) {
-			return "TODO";
-		}
-	}, instruction);
-}
 
 
 
