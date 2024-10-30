@@ -69,11 +69,11 @@ int main(int argc, char *argv[]) {
 		}
 
 		for(auto& e : prog.globals) {
-			std::cout << elc::ast::toString(e) << "\n";
+			std::cout << elc::ast::astToString(e) << "\n";
 		}
 
 		std::cout << "\n";
-		elc::compile();
+		elc::compile(prog);
 	}
 
 }

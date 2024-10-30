@@ -1,5 +1,8 @@
 #include "compiler.hpp"
+#include "ast.hpp"
+#include "help/visitor.hpp"
 
+#include <iostream>
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/Target/TargetMachine.h>
@@ -21,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <system_error>
+#include <variant>
 
 namespace elc {
 
@@ -34,7 +38,19 @@ Compiler::Compiler() {
 	builder = std::make_unique<llvm::IRBuilder<>>(*llvmContext);
 }
 
-void Compiler::compileUnit() {
+void Compiler::compileUnit([[maybe_unused]] const ast::Unit& unit) {
+
+	for(const auto& e : unit.globals) {
+		std::visit(visitor{
+			[&](const ast::FunDecl& a) {
+				std::cout << "a function declaration! " << a->name->toString() << "\n";
+			},
+			[&](auto& arg) {
+				std::cout << "Something: " << arg->toString() << "\n";
+			}
+		}, e);
+	}
+
 	constexpr uint32_t val = 42;
 	const std::string mainFunName = "main";
 
@@ -86,9 +102,9 @@ void Compiler::compileUnit() {
 
 
 
-void compile() {
-	Compiler compiler;
-	compiler.compileUnit();
+void compile(const ast::Unit& unit) {
+	static Compiler compiler;
+	compiler.compileUnit(unit);
 }
 
 }

@@ -1,6 +1,5 @@
 #include "ast.hpp"
 #include "tokens.hpp"
-#include "help/visitor.hpp"
 
 #include <string>
 #include <utility>
@@ -71,11 +70,7 @@ ULeftOperatorC::ULeftOperatorC(Expression&& e, std::string o)
 ULeftOperatorC::ULeftOperatorC(Expression& e, std::string o)
 : expr(std::move(e)), op(std::move(o)) {}
 std::string ULeftOperatorC::toString() const {
-	return std::visit(visitor{
-		[&](auto& e) {
-			return "(" + op + " " + e->toString() + ")";
-		}
-	}, expr);
+	return "(" + op + " " + astToString(expr) + ")";
 }
 
 
@@ -85,11 +80,7 @@ BiOperatorC::BiOperatorC(Expression&& l, Expression&& r, std::string o)
 BiOperatorC::BiOperatorC(Expression& l, Expression& r, std::string o)
 : left(std::move(l)), right(std::move(r)), op(std::move(o)) {}
 std::string BiOperatorC::toString() const {
-	return std::visit(visitor{
-		[&](auto& l, auto& r) {
-			return "(" + l->toString() + " " + op + " " + r->toString() + ")";
-		}
-	}, left, right);
+	return "(" + astToString(left) + " " + op + " " + astToString(right) + ")";
 }
 
 
@@ -103,10 +94,7 @@ std::string FunCallC::toString() const {
 	bool first = true;
 	for(const auto& arg : arguments) {
 		if(first) { first = false; } else { args += ", "; }
-		args += 
-			std::visit(visitor{
-				[&](auto& e) { return e->toString(); }
-			}, arg);
+		args += astToString(arg);
 	}
 	return "call " + name->toString() + " with (" + args + ")";
 }
@@ -115,11 +103,9 @@ std::string FunCallC::toString() const {
 ReturnC::ReturnC(Expression&& e) : expr(std::move(e)) {}
 ReturnC::ReturnC(Expression& e) : expr(std::move(e)) {}
 std::string ReturnC::toString() const {
-	return std::visit(visitor{
-		[&](auto& e) {
-			return "return " + (e == nullptr ? "" : e->toString());
-		}
-	}, expr);
+	return std::visit( [&](auto& e) {
+		return "return " + (e == nullptr ? "" : e->toString());
+	} , expr);
 }
 
 
@@ -127,7 +113,7 @@ std::string ReturnC::toString() const {
 std::string BlockC::toString() const {
 	std::string r;
 	for(const auto& i : instructions) {
-		r += "\t" + ::elc::ast::toString(i) + "\n";
+		r += "\t" + astToString(i) + "\n";
 	}
 	return r;
 }
@@ -154,10 +140,7 @@ VarDeclAssignC::VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e)
 VarDeclAssignC::VarDeclAssignC(Type& t, Identifier& n, Expression& e) 
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
 std::string VarDeclAssignC::toString() const {
-	return "variable " + name->toString() + " of type " + type->toString() + " = " + 
-		std::visit(visitor{
-			[&](auto& e2) { return e2->toString(); }
-		}, expr);
+	return "variable " + name->toString() + " of type " + type->toString() + " = " + astToString(expr);
 }
 
 FunDeclC::FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b)

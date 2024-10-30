@@ -102,7 +102,7 @@ using ArgumentList = std::vector<Expression>;
 using ArgumentDeclList = std::vector<std::pair<Type, Identifier>>;
 
 template<stdvariant V>
-std::string toString(const V& arg) {
+std::string astToString(const V& arg) {
 	return std::visit(visitor{
 		[&](auto& e) {
 			return e->toString();
