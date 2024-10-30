@@ -50,7 +50,7 @@ using variant = flatVariantBase<T...>::type;
 
 
 // ========================================================== //
-//				Atomic types forward declarations
+//              Atomic types forward declarations
 // ========================================================== //
 
 struct Tomasz {
@@ -83,7 +83,7 @@ struct TypeC;
 using Type = std::unique_ptr<TypeC>;
 
 // ========================================================== //
-//						Basic structures
+//                      Basic structures
 // ========================================================== //
 
 using Expression = variant<
@@ -111,7 +111,7 @@ std::string toString(const V& arg) {
 }
 
 // ========================================================== //
-//						Atomic types
+//                        Atomic types
 // ========================================================== //
 
 // Expressions:
@@ -214,7 +214,7 @@ struct TypeC : public Tomasz {
 
 
 // ========================================================== //
-//						Compilation Unit
+//                     Compilation Unit
 // ========================================================== //
 
 struct Unit {
