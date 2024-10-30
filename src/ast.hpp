@@ -218,6 +218,7 @@ struct TypeC : public Tomasz {
 // ========================================================== //
 
 struct Unit {
+	std::string name;
 	std::vector<Declaration> globals;
 };
 

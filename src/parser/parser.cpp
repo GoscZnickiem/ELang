@@ -127,7 +127,11 @@ struct Parser {
 	ast::Block Block() {
 		ast::Block block = std::make_unique<ast::BlockC>();
 		expect(TokenType::BRACE_L);
+		const Token temp = token;
 		while(next() != TokenType::BRACE_R) {
+			if(next() == TokenType::END) {
+				throw std::runtime_error("Error: Brace at line: " + std::to_string(temp.line) + ", column " + std::to_string(temp.column) + "isn't closed.");
+			}
 			block->instructions.emplace_back(Instr()); 
 		}
 		eat();
@@ -169,6 +173,9 @@ struct Parser {
 			auto e = Exp(0);
 			expect(TokenType::SEMICOLON);
 			return std::make_unique<ast::ReturnC>(std::move(e));
+		}
+		if(next() == TokenType::BRACE_L) {
+			return Block();
 		}
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);

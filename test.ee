@@ -1,18 +1,9 @@
-int x = 3;
-
-fun g() -> double {
-	return 7;
-}
-
-fun f(int a, double b) -> int {
-	int y = g();
-	x = y = y * a + x;
-	return x + y * b;
-}
+int x = 20;
 
 fun main() -> int {
-	x = 17 + g() * g();
-	return f(f(2 - 1, 15.0), 4.4);
-	return;
+	{
+		x = f(x);
+		x = x + 3;
+	}
+	return x + 3;
 }
-

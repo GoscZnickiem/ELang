@@ -115,7 +115,7 @@ std::string BlockC::toString() const {
 	for(const auto& i : instructions) {
 		r += "\t" + astToString(i) + "\n";
 	}
-	return r;
+	return "{\n" + r + "}";
 }
 
 
@@ -154,7 +154,7 @@ std::string FunDeclC::toString() const {
 		if(first) { first = false; } else { args += ", "; }
 		args += arg.first->toString() + " " + arg.second->toString();
 	}
-	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = {\n" + body->toString() + "}";
+	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = " + body->toString();
 }
 
 }

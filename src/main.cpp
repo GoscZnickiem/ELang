@@ -58,9 +58,10 @@ int main(int argc, char *argv[]) {
 		}
 		file.close();
 
-		elc::ast::Unit prog;
+		elc::ast::Unit unit;
 		try {
-			prog = elc::parse(tokens);
+			unit = elc::parse(tokens);
+			unit.name = arg;
 		} catch (std::runtime_error& e) {
 			std::cerr << "\033[1;31m================\n";
 			std::cout << "Parsing error:\033[0m\n";
@@ -68,12 +69,12 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		for(auto& e : prog.globals) {
+		for(auto& e : unit.globals) {
 			std::cout << elc::ast::astToString(e) << "\n";
 		}
 
 		std::cout << "\n";
-		elc::compile(prog);
+		elc::compile(unit);
 	}
 
 }

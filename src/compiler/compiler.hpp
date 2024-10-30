@@ -10,19 +10,6 @@
 
 namespace elc {
 
-class Compiler {
-public:
-	Compiler();
-
-	void compileUnit(const ast::Unit& unit);
-
-private:
-	std::unique_ptr<llvm::LLVMContext> llvmContext;
-	std::unique_ptr<llvm::Module> module;
-	std::unique_ptr<llvm::IRBuilder<>> builder;
-
-};
-
 void compile(const ast::Unit& unit);
 
 }
