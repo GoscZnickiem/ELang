@@ -30,6 +30,10 @@
 
 namespace elc {
 
+const std::map<ast::Type, llvm::Type*> builtInTypes {
+	
+};
+
 class Compiler {
 public:
 	Compiler() {
@@ -41,7 +45,7 @@ public:
 		builder = std::make_unique<llvm::IRBuilder<>>(*llvmContext);
 	}
 
-	// llvm::Function* createFunction(const ast::FunDecl& funDecl) {
+	// llvm::Function* createFunction(const ast::FunDecl& funDecmake l) {
 	// 	llvm::FunctionType* funType = llvm::FunctionType::get(returnType, parameterTypes, false);
 	// 	llvm::Function* fun = llvm::Function::Create(funType, llvm::Function::ExternalLinkage, name, *module);
 	// 	std::size_t i = 0;

@@ -1,9 +1,0 @@
-E -> Exp(0)
-
-Exp(p) -> P { B Exp(q) }
-
-P -> U Exp(q) | ( E ) | num
-
-B -> + | - | * | / 
-
-U -> -

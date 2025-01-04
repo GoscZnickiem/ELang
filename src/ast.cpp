@@ -120,8 +120,8 @@ std::string BlockC::toString() const {
 
 
 
-TypeC::TypeC(std::string n) : name(std::move(n)) {}
-std::string TypeC::toString() const {
+TypeIdentC::TypeIdentC(std::string n) : name(std::move(n)) {}
+std::string TypeIdentC::toString() const {
 	return name;
 }
 
@@ -132,7 +132,7 @@ VarDeclC::VarDeclC(Type&& t, Identifier&& n)
 VarDeclC::VarDeclC(Type& t, Identifier& n) 
 : type(std::move(t)), name(std::move(n)) {}
 std::string VarDeclC::toString() const {
-	return "variable " + name->toString() + " of type " + type->toString();
+	return "variable " + name->toString() + " of type " + astToString(type);
 }
 
 VarDeclAssignC::VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e)
@@ -140,7 +140,7 @@ VarDeclAssignC::VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e)
 VarDeclAssignC::VarDeclAssignC(Type& t, Identifier& n, Expression& e) 
 : type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
 std::string VarDeclAssignC::toString() const {
-	return "variable " + name->toString() + " of type " + type->toString() + " = " + astToString(expr);
+	return "variable " + name->toString() + " of type " + astToString(type) + " = " + astToString(expr);
 }
 
 FunDeclC::FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b)
@@ -152,9 +152,9 @@ std::string FunDeclC::toString() const {
 	bool first = true;
 	for(const auto& arg : arguments) {
 		if(first) { first = false; } else { args += ", "; }
-		args += arg.first->toString() + " " + arg.second->toString();
+		args += astToString(arg.first) + " " + arg.second->toString();
 	}
-	return "function " + name->toString() + " of type (" + args + ") -> " + returnType->toString() + " = " + body->toString();
+	return "function " + name->toString() + " of type (" + args + ") -> " + astToString(returnType) + " = " + body->toString();
 }
 
 }

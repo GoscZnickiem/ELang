@@ -78,9 +78,10 @@ using Block = std::unique_ptr<BlockC>;
 using VarDecl = std::unique_ptr<VarDeclC>;
 using VarDeclAssign = std::unique_ptr<VarDeclAssignC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
-// other
-struct TypeC;
-using Type = std::unique_ptr<TypeC>;
+// Types
+struct TypeIdentC; struct TypePointerC;
+using TypeIdent = std::unique_ptr<TypeIdentC>;
+using TypePointer = std::unique_ptr<TypePointerC>;
 
 // ========================================================== //
 //                      Basic structures
@@ -96,6 +97,10 @@ using Declaration = variant<
 
 using Instruction = variant<
 	Expression, Declaration, Block, Return
+>;
+
+using Type = variant<
+	TypeIdent, TypePointer
 >;
 
 using ArgumentList = std::vector<Expression>;
@@ -202,14 +207,20 @@ struct FunDeclC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-// Other
+// Types
 
-struct TypeC : public Tomasz {
-	explicit TypeC(std::string n);
+struct TypeIdentC : public Tomasz {
+	explicit TypeIdentC(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
 };
 
+struct TypePointerC : public Tomasz {
+	explicit TypePointerC(TypeIdentC&& i);
+	explicit TypePointerC(TypeIdentC& i);
+	TypeIdent pointingTo;
+	[[nodiscard]] std::string toString() const final;
+};
 
 
 

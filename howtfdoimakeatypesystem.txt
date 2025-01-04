@@ -1,0 +1,104 @@
+What we want:
+
+Variables/constatns with types (duh): int x; String* stringptr; BullshitType helloJelly; ...
+Atmoic, basic types: int, char, float...
+Pointer and raw array types (somehow... directly in the language? Using other constructs somehow?): int*, String[3]
+Algebraic types: normal structs and classes (record types), C-style unions?, product types, sum types (again these might just as well be std stuff)
+Function pointer types: I suppose they are different than type pointer types.
+Lambdas are just syntactic sugar for a class with () operator or a function pointer.
+
+Now shit get freaky: using types as values. So we want:
+Functor - "function" that takes in a type and returns a type: dynamic_array<int>
+Multifunctor - basically the same as above but wight take in more than just one type (BUT THE ARITY IS CONSTANT) - might as well call these functors
+Valuetotype "function" - so like vector<3>
+Valuetofunction "function" - I don't even have an example. In c++: template<int N> int fun(int parameter) {...};
+Typetovalue "function" - something like float perimeter = radius * pi<float> (is it even necessary?)
+Typetofunction "function" - c++: template<typename T> T add(T a, Tb) { return a + b; };
+And mix of these...: array<int, 23>;
+
+And then I need variadic versions of these. Ay caramba.
+
+Lemme cook:
+Let's define kinds. We're only gonna use them in compile time instructions so that we won't have to fuck around with how shit's gonna work exactly.
+Every typed value (5, "hello", int* x) is of kind "value" and every type value (int, MyClass, char*) is of kind "type".
+Now let's take the algebraic sum of these two kinds and call it typoid or some shit. We're looking for n-ary maps from typoids to typoid. Will it be enough?
+Fuck no. We also need something to make it work as variadic functions/types... Let's just... add the ability to define new kinds, including recursive definitions
+- just like in functional programming languages we can define recursive types. What could possibly go wrong. Let's try:
+
+I'm doing this as a warmup because I have no fucking idea what I'm doing:
+
+	type t0 = int * float;
+	type t1 = struct { int x; float y; };
+	type t2 = int | float;
+	type t3 = unit | int * t3; - type of algebraic list of ints
+
+Now onto the kinds:
+
+	#kind UNIT = 1 - We might wanna have a 1 in this thing even if it's not a category
+	#kind VOID = 0 - Might also be useful. Or not.
+	kind typoid = value | type; - Things like: 5, "hello", 0x03CA5800, as well as int, int*, String, char[10]
+
+	kind pairofvalues = value * value; - IT IS NOT the same as a type of pair.
+
+The above example is crucial in setting a boundary between types and kinds. In the world of kind pairofvalues live creatures like 
+<4, 7>, <15.9, -10>, <"Hello", 1>. But we need to distinguish algebraic kinds from algebraic types - a pair (4, 7) DOESN'T belong here - it is of value kind 
+- not value * value. So other creatures that live here are: <("hello", 7), "world">, <15.9, ("hi", 4, 2, 1, (15, "Bob"))> and so one.
+
+	kind valuelist = UNIT | value * typelist;
+	#kind value = value * UNIT = value * type - And so it is a "subkind" of kind valuelist
+
+We might wanna define a "subkind":
+If we switch kind A for kind B in every possible compile-time definition and it won't change how it works for all values of A then A is a subkind of B.
+In other words: 4 is an int so it is of kind value, but it is also of kind valuelist. And every int is also a valuelist.
+
+	kind unaryfunction = value -> value;
+
+We say that -> is just a construct in the world of kinds just like * and |.
+It corresponds to a token that we can give an argument to using <> (just like we do with functions and () operator) and it will then "transform" into a 
+type after the arrow. For example if F is of kind value -> value then F<7> is of kind value (or simply - is a value).
+I would call it a morphism but I have a feeling it won't work.
+If we do assume kinds to form a category then indeed every A -> B kind has a 1-1 correspondence to Hom(A,B).
+But hold on shouldn't a function be a type? Like you know int -> float is a type. Well yes but remember we're only working with compile-time statements.
+That means that a construct above while being called a function - will never actually get called, won't have any instructions,
+we cannot take the memory address of it and so on... Being called a function is then misleading even though we would normally call it that due to its definition.
+Let's then call it macro instead (since it does actually resemble a C-style macro more than a function).
+We can then use similar constructs including a variadic one:
+
+	kind unarymacro = value -> value;
+	kind binarymacro = value * value -> value;
+	kind ternarymacro = value * value * value -> value;
+	kind variadicmacro(yay!) = valuelist -> value;
+
+But I guess it would be more efficient to just have a single macro kind for each of them. Is it possible? Maybe later.
+
+Let's involve type kinds into the mix.
+
+	kind k0 = type -> type; - Standard C++ template<typename T> class myClassWithTypeParameter;
+	kind k1 = value -> type; - If C++ allowed it it would be template<auto v> class myClassWithParameter { (for example) public: auto v; };
+
+The above kind might be actually useflu if we could somehow take out the type of the parameter. Maybe a typeof() operator? (note: typeof : value -> type)
+
+	kind k2 = type -> value; - This would actually correspond to stuff like template<typename T> void something(T arg) ...;
+
+Now this kind is truly epic. It allows us to generate type dependent values as well as functions. 
+But now for the fun part: actual variadic stuff!
+
+	kind typelist = UNIT | type * typelist; - Just like what we did with valuelist
+	kind variadicfunctor = typelist -> type;
+
+Holy! Variadic types! With this we can for example define a tuple. And you know how fucking annoying it is in C++. Here? Well let's see:
+
+	variadicfunctor tuple <typelist Ts> =
+		match Ts with:
+		| T, Tss : type * typelist -> T * tuple<Tss>
+		| _ : UNIT -> unit
+	
+Ofc the notation is very work in progress. But there is way more. We can make functors way more powerful by using typoids (forgot them?):
+
+	kind typoid = value | type;
+	kind typoidlist = UNIT | typoid * typoidlist;
+	kind unaryfunctor = typoid -> typoid;
+	kind binaryfunctor = typoid * typoid -> typoid;
+	kind variadicfunctor = typoidlist -> typoid;
+
+Epic! But still. We would like to just have a functor kind. How do we do that?

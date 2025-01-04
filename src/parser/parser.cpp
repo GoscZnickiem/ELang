@@ -38,8 +38,9 @@ struct Parser {
 		}
 		eat();
 	}
-	void throwError() {
-
+	void revert(std::size_t n) {
+		index -= n + 1;
+		eat();
 	}
 
 	ast::Expression Exp(int p) {
@@ -90,12 +91,23 @@ struct Parser {
 		throw std::runtime_error("Error: expected expression. line: " + std::to_string(token.line) + ", column " + std::to_string(token.column));
 	}
 
+	ast::Type Type() {
+		if(next() == TokenType::IDENTIFIER) {
+			eat();
+			ast::TypeIdent id = std::make_unique<ast::TypeIdentC>(token.data);
+		}
+	}
+
+	std::pair<ast::Type, std::size_t> MaybeType() {
+
+	}
+
 	ast::ArgumentDeclList ArgDeclList() {
 		ast::ArgumentDeclList list;
 		expect(TokenType::PAREN_L);
 		while(next() != TokenType::PAREN_R) {
 			expect(TokenType::IDENTIFIER);
-			auto type = std::make_unique<ast::TypeC>(token.data);
+			auto type = std::make_unique<ast::TypeIdentC>(token.data);
 			expect(TokenType::IDENTIFIER);
 			auto name = std::make_unique<ast::IdentifierC>(token.data);
 			list.emplace_back(std::move(type), std::move(name));
@@ -139,20 +151,6 @@ struct Parser {
 	}
 
 	ast::Instruction Instr() {
-		if(next() == TokenType::IDENTIFIER && next(2) == TokenType::IDENTIFIER) {
-			eat();
-			ast::Type type = std::make_unique<ast::TypeC>(token.data);
-			eat();
-			ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);
-			if(next() == TokenType::OP_ASSIGN) {
-				eat();
-				auto exp = Exp(0);
-				expect(TokenType::SEMICOLON);
-				return std::make_unique<ast::VarDeclAssignC>(type, name, exp);
-			}
-			expect(TokenType::SEMICOLON);
-			return std::make_unique<ast::VarDeclC>(type, name);
-		}
 		if(next() == TokenType::KEY_FUN) {
 			eat();
 			expect(TokenType::IDENTIFIER);
@@ -160,9 +158,9 @@ struct Parser {
 			auto args = ArgDeclList();
 			expect(TokenType::ARROW_RIGHT);
 			expect(TokenType::IDENTIFIER);
-			auto returnType = std::make_unique<ast::TypeC>(token.data);
+			auto returnType = std::make_unique<ast::TypeIdentC>(token.data);
 			auto block = Block();
-			return std::make_unique<ast::FunDeclC>(name, returnType, args, block);
+			return std::make_unique<ast::FunDeclC>(std::move(name), std::move(returnType), std::move(args), std::move(block));
 		}
 		if(next() == TokenType::KEY_RETURN) {
 			eat();
@@ -177,6 +175,22 @@ struct Parser {
 		if(next() == TokenType::BRACE_L) {
 			return Block();
 		}
+
+		auto typeOpt = MaybeType();
+		if(typeOpt.second == 0) {
+			ast::Type type = std::move(typeOpt.first);
+			expect(TokenType::IDENTIFIER);
+			ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);
+			if(next() == TokenType::OP_ASSIGN) {
+				eat();
+				auto exp = Exp(0);
+				expect(TokenType::SEMICOLON);
+				return std::make_unique<ast::VarDeclAssignC>(type, name, exp);
+			}
+			expect(TokenType::SEMICOLON);
+			return std::make_unique<ast::VarDeclC>(type, name);
+		}
+		revert(typeOpt.second);
 		auto e = Exp(0);
 		expect(TokenType::SEMICOLON);
 		return std::visit(
