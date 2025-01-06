@@ -26,6 +26,8 @@ std::string convert(TokenType type) {
 		case TokenType::PAREN_R:		return ")";
 		case TokenType::BRACE_L:		return "{";
 		case TokenType::BRACE_R:		return "}";
+		case TokenType::CARROT_L:		return "<";
+		case TokenType::CARROT_R:		return ">";
 		case TokenType::ARROW_RIGHT:	return "->";
 		default:
 			if(isInMap(keywords, type)) return "Keyword";

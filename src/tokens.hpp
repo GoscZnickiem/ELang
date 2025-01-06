@@ -14,10 +14,10 @@ enum class TokenType {
 
 	KEY_RETURN, KEY_FUN,
 
-	SEMICOLON, COMMA, PAREN_L, PAREN_R, BRACE_L, BRACE_R,
+	SEMICOLON, COMMA, PAREN_L, PAREN_R, BRACE_L, BRACE_R, CARROT_L, CARROT_R,
 
 	OP_ASSIGN, 
-	OP_PLUS, OP_MINUS, OP_MULT, OP_DIV, OP_MODULO,
+	OP_PLUS, OP_MINUS, OP_STAR, OP_DIV, OP_MODULO,
 	OP_BITAND, OP_BITOR, OP_BITXOR, OP_BITNEGATE, OP_BITSHIFTLEFT, OP_BITSHIFTRIGHT,
 	OP_EQUALS, OP_NOTEQUALS, OP_LESS, OP_LESSEQUAL, OP_GREATER, OP_GREATEREQUAL,
 	OP_AND, OP_OR, OP_XOR, OP_NEGATE,
@@ -32,10 +32,12 @@ const inline std::map<std::string, TokenType> symbols = {
 	{")", TokenType::PAREN_R},
 	{"{", TokenType::BRACE_L},
 	{"}", TokenType::BRACE_R},
+	{"<", TokenType::CARROT_L},
+	{">", TokenType::CARROT_R},
 	{"=", TokenType::OP_ASSIGN},
 	{"+", TokenType::OP_PLUS},
 	{"-", TokenType::OP_MINUS},
-	{"*", TokenType::OP_MULT},
+	{"*", TokenType::OP_STAR},
 	{"/", TokenType::OP_DIV},
 	{"%", TokenType::OP_MODULO},
 	{"&", TokenType::OP_BITAND},

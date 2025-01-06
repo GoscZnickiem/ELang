@@ -32,11 +32,9 @@ I'm doing this as a warmup because I have no fucking idea what I'm doing:
 	type t2 = int | float;
 	type t3 = unit | int * t3; - type of algebraic list of ints
 
-Now onto the kinds:
-
-	#kind UNIT = 1 - We might wanna have a 1 in this thing even if it's not a category
-	#kind VOID = 0 - Might also be useful. Or not.
-	kind typoid = value | type; - Things like: 5, "hello", 0x03CA5800, as well as int, int*, String, char[10]
+	#kind UNIT = 1 - we might wanna have a 1 in this thing even if it's not a category
+	#kind VOID = 0 - might also be useful. Or not.
+	kind typoid = value | type; - things like: 5, "hello", 0x03CA5800, as well as int, int*, String, char[10]
 
 	kind pairofvalues = value * value; - IT IS NOT the same as a type of pair.
 
@@ -45,60 +43,19 @@ The above example is crucial in setting a boundary between types and kinds. In t
 - not value * value. So other creatures that live here are: <("hello", 7), "world">, <15.9, ("hi", 4, 2, 1, (15, "Bob"))> and so one.
 
 	kind valuelist = UNIT | value * typelist;
-	#kind value = value * UNIT = value * type - And so it is a "subkind" of kind valuelist
+	#kind value = value * UNIT = value * type - and so it is a "subkind" of kind valuelist
 
 We might wanna define a "subkind":
 If we switch kind A for kind B in every possible compile-time definition and it won't change how it works for all values of A then A is a subkind of B.
 In other words: 4 is an int so it is of kind value, but it is also of kind valuelist. And every int is also a valuelist.
 
-	kind unaryfunction = value -> value;
-
-We say that -> is just a construct in the world of kinds just like * and |.
-It corresponds to a token that we can give an argument to using <> (just like we do with functions and () operator) and it will then "transform" into a 
-type after the arrow. For example if F is of kind value -> value then F<7> is of kind value (or simply - is a value).
-I would call it a morphism but I have a feeling it won't work.
-If we do assume kinds to form a category then indeed every A -> B kind has a 1-1 correspondence to Hom(A,B).
-But hold on shouldn't a function be a type? Like you know int -> float is a type. Well yes but remember we're only working with compile-time statements.
-That means that a construct above while being called a function - will never actually get called, won't have any instructions,
-we cannot take the memory address of it and so on... Being called a function is then misleading even though we would normally call it that due to its definition.
-Let's then call it macro instead (since it does actually resemble a C-style macro more than a function).
-We can then use similar constructs including a variadic one:
-
-	kind unarymacro = value -> value;
-	kind binarymacro = value * value -> value;
-	kind ternarymacro = value * value * value -> value;
-	kind variadicmacro(yay!) = valuelist -> value;
-
-But I guess it would be more efficient to just have a single macro kind for each of them. Is it possible? Maybe later.
-
-Let's involve type kinds into the mix.
-
-	kind k0 = type -> type; - Standard C++ template<typename T> class myClassWithTypeParameter;
-	kind k1 = value -> type; - If C++ allowed it it would be template<auto v> class myClassWithParameter { (for example) public: auto v; };
-
-The above kind might be actually useflu if we could somehow take out the type of the parameter. Maybe a typeof() operator? (note: typeof : value -> type)
-
-	kind k2 = type -> value; - This would actually correspond to stuff like template<typename T> void something(T arg) ...;
-
-Now this kind is truly epic. It allows us to generate type dependent values as well as functions. 
-But now for the fun part: actual variadic stuff!
-
-	kind typelist = UNIT | type * typelist; - Just like what we did with valuelist
-	kind variadicfunctor = typelist -> type;
-
-Holy! Variadic types! With this we can for example define a tuple. And you know how fucking annoying it is in C++. Here? Well let's see:
-
-	variadicfunctor tuple <typelist Ts> =
-		match Ts with:
-		| T, Tss : type * typelist -> T * tuple<Tss>
-		| _ : UNIT -> unit
-	
-Ofc the notation is very work in progress. But there is way more. We can make functors way more powerful by using typoids (forgot them?):
-
+	kind typelist = UNIT | type * typelist; - just like what we did with valuelist
 	kind typoid = value | type;
 	kind typoidlist = UNIT | typoid * typoidlist;
-	kind unaryfunctor = typoid -> typoid;
-	kind binaryfunctor = typoid * typoid -> typoid;
-	kind variadicfunctor = typoidlist -> typoid;
 
-Epic! But still. We would like to just have a functor kind. How do we do that?
+We can declare type values of these kinds.
+
+	type T = int;
+	value x = 4; - INVALID: value kind is special as it is composed of types. We would instead write:
+	int x = 4;
+	int*string p = <4, "hello"> - the operator shouldn't conflict with algebraic product in types
