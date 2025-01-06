@@ -12,11 +12,11 @@ enum class TokenType {
 
 	IDENTIFIER, NUMERAL, BOOL, STRING,
 
-	KEY_RETURN, KEY_FUN,
+	KEY_RETURN, KEY_FUN, KEY_FUNCTOR, KEY_KIND, KEY_DEF,
 
 	SEMICOLON, COMMA, PAREN_L, PAREN_R, BRACE_L, BRACE_R, CARROT_L, CARROT_R,
 
-	OP_ASSIGN, 
+	OP_ASSIGN, OP_DEFASSIGN,
 	OP_PLUS, OP_MINUS, OP_STAR, OP_DIV, OP_MODULO,
 	OP_BITAND, OP_BITOR, OP_BITXOR, OP_BITNEGATE, OP_BITSHIFTLEFT, OP_BITSHIFTRIGHT,
 	OP_EQUALS, OP_NOTEQUALS, OP_LESS, OP_LESSEQUAL, OP_GREATER, OP_GREATEREQUAL,
@@ -35,6 +35,7 @@ const inline std::map<std::string, TokenType> symbols = {
 	{"<", TokenType::CARROT_L},
 	{">", TokenType::CARROT_R},
 	{"=", TokenType::OP_ASSIGN},
+	{":=", TokenType::OP_DEFASSIGN},
 	{"+", TokenType::OP_PLUS},
 	{"-", TokenType::OP_MINUS},
 	{"*", TokenType::OP_STAR},
@@ -61,7 +62,10 @@ const inline std::map<std::string, TokenType> symbols = {
 
 const inline std::map<std::string, TokenType> keywords = {
 	{"return", TokenType::KEY_RETURN},
-	{"fun", TokenType::KEY_FUN}
+	{"fun", TokenType::KEY_FUN},
+	{"functor", TokenType::KEY_FUNCTOR},
+	{"kind", TokenType::KEY_KIND},
+	{"def", TokenType::KEY_DEF}
 };
 
 struct Token {

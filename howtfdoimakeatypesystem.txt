@@ -1,61 +1,135 @@
-What we want:
+Fuck.
 
-Variables/constatns with types (duh): int x; String* stringptr; BullshitType helloJelly; ...
-Atmoic, basic types: int, char, float...
-Pointer and raw array types (somehow... directly in the language? Using other constructs somehow?): int*, String[3]
-Algebraic types: normal structs and classes (record types), C-style unions?, product types, sum types (again these might just as well be std stuff)
-Function pointer types: I suppose they are different than type pointer types.
-Lambdas are just syntactic sugar for a class with () operator or a function pointer.
+========================================================
 
-Now shit get freaky: using types as values. So we want:
-Functor - "function" that takes in a type and returns a type: dynamic_array<int>
-Multifunctor - basically the same as above but wight take in more than just one type (BUT THE ARITY IS CONSTANT) - might as well call these functors
-Valuetotype "function" - so like vector<3>
-Valuetofunction "function" - I don't even have an example. In c++: template<int N> int fun(int parameter) {...};
-Typetovalue "function" - something like float perimeter = radius * pi<float> (is it even necessary?)
-Typetofunction "function" - c++: template<typename T> T add(T a, Tb) { return a + b; };
-And mix of these...: array<int, 23>;
+fun main() -> int {
+	return 42;
+}
 
-And then I need variadic versions of these. Ay caramba.
+========================================================
 
-Lemme cook:
-Let's define kinds. We're only gonna use them in compile time instructions so that we won't have to fuck around with how shit's gonna work exactly.
-Every typed value (5, "hello", int* x) is of kind "value" and every type value (int, MyClass, char*) is of kind "type".
-Now let's take the algebraic sum of these two kinds and call it typoid or some shit. We're looking for n-ary maps from typoids to typoid. Will it be enough?
-Fuck no. We also need something to make it work as variadic functions/types... Let's just... add the ability to define new kinds, including recursive definitions
-- just like in functional programming languages we can define recursive types. What could possibly go wrong. Let's try:
+fun f(int a, int b) -> int {
+	int x = a + b;
+	int y = a * b;
+	return x + y;
+}
 
-I'm doing this as a warmup because I have no fucking idea what I'm doing:
+fun main() -> int {
+	int r = f(4, 6)
+	return r - 2;
+}
 
-	type t0 = int * float;
-	type t1 = struct { int x; float y; };
-	type t2 = int | float;
-	type t3 = unit | int * t3; - type of algebraic list of ints
+========================================================
 
-	#kind UNIT = 1 - we might wanna have a 1 in this thing even if it's not a category
-	#kind VOID = 0 - might also be useful. Or not.
-	kind typoid = value | type; - things like: 5, "hello", 0x03CA5800, as well as int, int*, String, char[10]
+def Vec = struct {
+	float x;
+	float y;
+};
 
-	kind pairofvalues = value * value; - IT IS NOT the same as a type of pair.
+fun main() -> int {
+	Vec v;
+	v.x = 1;
+	v.y = 1;
+	Vec u = {1, 2}; // {1, 2} isn't a struct but structs and algebraic products can be used interchangebly for convenience
+	u.x += v.x;
+	u.y += v.y;
+	return u.x * 10 + u.y;
+}
 
-The above example is crucial in setting a boundary between types and kinds. In the world of kind pairofvalues live creatures like 
-<4, 7>, <15.9, -10>, <"Hello", 1>. But we need to distinguish algebraic kinds from algebraic types - a pair (4, 7) DOESN'T belong here - it is of value kind 
-- not value * value. So other creatures that live here are: <("hello", 7), "world">, <15.9, ("hi", 4, 2, 1, (15, "Bob"))> and so one.
+========================================================
 
-	kind valuelist = UNIT | value * typelist;
-	#kind value = value * UNIT = value * type - and so it is a "subkind" of kind valuelist
+def Human = string * age;
 
-We might wanna define a "subkind":
-If we switch kind A for kind B in every possible compile-time definition and it won't change how it works for all values of A then A is a subkind of B.
-In other words: 4 is an int so it is of kind value, but it is also of kind valuelist. And every int is also a valuelist.
+fun main() -> int {
+	Human ryszard = {"ryszard", 58};
+	return ryszard[1]; // like an array?
+}
 
-	kind typelist = UNIT | type * typelist; - just like what we did with valuelist
-	kind typoid = value | type;
-	kind typoidlist = UNIT | typoid * typoidlist;
+========================================================
 
-We can declare type values of these kinds.
+def OptionalInt = int | unit;
 
-	type T = int;
-	value x = 4; - INVALID: value kind is special as it is composed of types. We would instead write:
-	int x = 4;
-	int*string p = <4, "hello"> - the operator shouldn't conflict with algebraic product in types
+fun main() -> int {
+	OptionalInt i = 5;
+	int res = 
+		match i with
+		| int x -> x;
+		| unit -> 0;
+	// lub też:
+	int res;
+	match i with
+	| int x -> res = x;
+	| unit -> res = 0;
+
+	return res;
+}
+
+========================================================
+
+type T = int; // kind value declaration
+def U = int; // ain't this the same tho?
+
+fun main() -> int {
+	T x = 15;
+	U y = 16;
+	return 15 + 16;
+}
+
+========================================================
+
+functor Optional<type T> -> type = T | unit;
+
+fun main() -> int {
+	Optional<int> i = 5; 
+	// ... kod taki jak wyżej
+	return res;
+}
+
+========================================================
+
+functor Add<int a, int b> -> int = a + b; // it is in fact useless but why wouldn't this work?
+
+fun main() -> int {
+	return Add<12, 30>;
+}
+
+========================================================
+
+functor Adder<int a> ->
+	fun(int b) -> int = {
+		return a + b;
+	}
+// also useless but still why not. Also the notation is fucked but I didn't think about anonymous functions (lambdas)
+
+fun add2(int) -> int = Adder<2>;
+
+fun main() -> int {
+	return add2(3) + Adder<8>(15);
+}
+
+========================================================
+
+// https://betterttv.com/emotes/662e62934e3d1ff63d186407
+functor Adder<type T> -> functor<T a> -> fun(T b) -> T =
+	functor<T a> -> fun(T b) -> T = 
+		fun(T b) -> T = {
+			return a + b;
+		}
+// this is unacceptable. The format: functor name<arguments> -> return kind = ... doesn't work with anonymous functor construction: functor<arguments> -> return kind = ...
+// Also I don't know if functor should be a kind. Seems useful but also cursed and hard af to implement. After all functions CAN'T return functions.
+// Then again it would be useful because otherwise how do we do functor<type T, T value>? We kinda can't or it would be atrocious.
+
+========================================================
+
+// I could infer the return kind tho...
+functor Adder<type T> -> 
+	functor<T a> -> 
+		fun(T b) -> T { // could also type infer the return type of anonymous functions
+			return a + b;
+		}
+// That is a bit more acceptable ig. Allows for lukier syntaktyczny:
+functor Adder<type T, T a> ->
+	fun<T a> -> T {
+		return a + b;
+	}
+// The compiler could very easily interpret this as if it was written like the above version

@@ -94,7 +94,7 @@ struct Parser {
 	ast::Type Type() {
 		if(next() == TokenType::IDENTIFIER) {
 			eat();
-			ast::TypeIdent id = std::make_unique<ast::TypeIdentC>(token.data);
+			const ast::TypeIdent id = std::make_unique<ast::TypeIdentC>(token.data);
 		}
 	}
 

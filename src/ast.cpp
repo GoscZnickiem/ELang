@@ -29,7 +29,7 @@ std::pair<int, bool> getBiOperatorData(TokenType token) {
 		case TokenType::OP_BITSHIFTRIGHT:	return {10, true};
         case TokenType::OP_PLUS:
         case TokenType::OP_MINUS:			return {11, true};
-        case TokenType::OP_MULT:
+        case TokenType::OP_STAR:
         case TokenType::OP_DIV:
         case TokenType::OP_MODULO:			return {12, true};	
 		default: return {-1, false};

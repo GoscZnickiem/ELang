@@ -78,10 +78,18 @@ using Block = std::unique_ptr<BlockC>;
 using VarDecl = std::unique_ptr<VarDeclC>;
 using VarDeclAssign = std::unique_ptr<VarDeclAssignC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
+// Kinds
+struct KindDeclC;
+using KindDecl = std::unique_ptr<KindDeclC>;
+struct KindValDeclC;
+using KindValDecl = std::unique_ptr<KindValDeclC>;
+struct FunctorDeclC;
+using FunctorDecl = std::unique_ptr<FunctorDeclC>;
+struct FunctorCallC;
+using FunctorCall = std::unique_ptr<FunctorCallC>;
 // Types
-struct TypeIdentC; struct TypePointerC;
-using TypeIdent = std::unique_ptr<TypeIdentC>;
-using TypePointer = std::unique_ptr<TypePointerC>;
+struct TypeDeclC;
+using TypeDecl = std::unique_ptr<TypeDeclC>;
 
 // ========================================================== //
 //                      Basic structures
@@ -99,8 +107,12 @@ using Instruction = variant<
 	Expression, Declaration, Block, Return
 >;
 
+using Kind = variant<
+	Identifier 
+>;
+
 using Type = variant<
-	TypeIdent, TypePointer
+	Identifier 
 >;
 
 using ArgumentList = std::vector<Expression>;
@@ -207,20 +219,23 @@ struct FunDeclC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
+// Kinds:
+
+struct KindDeclC : public Tomasz {
+	explicit KindDeclC(Identifier&& n, Kind&& k);
+	Identifier name;
+	Kind value;
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct KindValDeclC : public Tomasz {
+	explicit KindValDeclC(Kind&& k, Identifier&& n, );
+	Identifier name;
+	Kind value;
+	[[nodiscard]] std::string toString() const final;
+};
+
 // Types
-
-struct TypeIdentC : public Tomasz {
-	explicit TypeIdentC(std::string n);
-	std::string name;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct TypePointerC : public Tomasz {
-	explicit TypePointerC(TypeIdentC&& i);
-	explicit TypePointerC(TypeIdentC& i);
-	TypeIdent pointingTo;
-	[[nodiscard]] std::string toString() const final;
-};
 
 
 
