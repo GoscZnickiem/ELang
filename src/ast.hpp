@@ -79,17 +79,17 @@ using VarDecl = std::unique_ptr<VarDeclC>;
 using VarDeclAssign = std::unique_ptr<VarDeclAssignC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
 // Kinds
-struct KindDeclC;
-using KindDecl = std::unique_ptr<KindDeclC>;
-struct KindValDeclC;
-using KindValDecl = std::unique_ptr<KindValDeclC>;
-struct FunctorDeclC;
-using FunctorDecl = std::unique_ptr<FunctorDeclC>;
-struct FunctorCallC;
-using FunctorCall = std::unique_ptr<FunctorCallC>;
+// struct KindDeclC;
+// using KindDecl = std::unique_ptr<KindDeclC>;
+// struct KindValDeclC;
+// using KindValDecl = std::unique_ptr<KindValDeclC>;
+// struct FunctorDeclC;
+// using FunctorDecl = std::unique_ptr<FunctorDeclC>;
+// struct FunctorCallC;
+// using FunctorCall = std::unique_ptr<FunctorCallC>;
 // Types
-struct TypeDeclC;
-using TypeDecl = std::unique_ptr<TypeDeclC>;
+// struct TypeDeclC;
+// using TypeDecl = std::unique_ptr<TypeDeclC>;
 
 // ========================================================== //
 //                      Basic structures
@@ -221,19 +221,19 @@ struct FunDeclC : public Tomasz {
 
 // Kinds:
 
-struct KindDeclC : public Tomasz {
-	explicit KindDeclC(Identifier&& n, Kind&& k);
-	Identifier name;
-	Kind value;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct KindValDeclC : public Tomasz {
-	explicit KindValDeclC(Kind&& k, Identifier&& n, );
-	Identifier name;
-	Kind value;
-	[[nodiscard]] std::string toString() const final;
-};
+// struct KindDeclC : public Tomasz {
+// 	explicit KindDeclC(Identifier&& n, Kind&& k);
+// 	Identifier name;
+// 	Kind value;
+// 	[[nodiscard]] std::string toString() const final;
+// };
+//
+// struct KindValDeclC : public Tomasz {
+// 	explicit KindValDeclC(Kind&& k, Identifier&& n, );
+// 	Identifier name;
+// 	Kind value;
+// 	[[nodiscard]] std::string toString() const final;
+// };
 
 // Types
 

@@ -6,6 +6,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
+#include <stack>
 #include <string>
 #include <utility>
 #include <variant>
@@ -19,6 +21,7 @@ struct Parser {
 	std::vector<Token>* tokens;
 	std::size_t index{};
 	Token token;
+	std::stack<std::size_t> checkPoints;
 
 	[[nodiscard]] TokenType next(std::size_t i = 1) const {
 		return (*tokens)[index + i].type;
@@ -38,9 +41,17 @@ struct Parser {
 		}
 		eat();
 	}
-	void revert(std::size_t n) {
+	void stepBack(std::size_t n = 1) {
 		index -= n + 1;
 		eat();
+	}
+	void revert() {
+		index = checkPoints.top();
+		checkPoints.pop();
+		eat();
+	}
+	void checkPoint() {
+		checkPoints.push(index - 1);
 	}
 
 	ast::Expression Exp(int p) {
@@ -92,13 +103,14 @@ struct Parser {
 	}
 
 	ast::Type Type() {
+		ast::Type type;
 		if(next() == TokenType::IDENTIFIER) {
 			eat();
-			const ast::TypeIdent id = std::make_unique<ast::TypeIdentC>(token.data);
+			const auto id = std::make_unique<ast::IdentifierC>(token.data);
 		}
 	}
 
-	std::pair<ast::Type, std::size_t> MaybeType() {
+	std::optional<ast::Type> tryType() {
 
 	}
 
@@ -107,7 +119,7 @@ struct Parser {
 		expect(TokenType::PAREN_L);
 		while(next() != TokenType::PAREN_R) {
 			expect(TokenType::IDENTIFIER);
-			auto type = std::make_unique<ast::TypeIdentC>(token.data);
+			auto type = std::make_unique<ast::IdentifierC>(token.data);
 			expect(TokenType::IDENTIFIER);
 			auto name = std::make_unique<ast::IdentifierC>(token.data);
 			list.emplace_back(std::move(type), std::move(name));
@@ -158,7 +170,7 @@ struct Parser {
 			auto args = ArgDeclList();
 			expect(TokenType::ARROW_RIGHT);
 			expect(TokenType::IDENTIFIER);
-			auto returnType = std::make_unique<ast::TypeIdentC>(token.data);
+			auto returnType = std::make_unique<ast::IdentifierC>(token.data);
 			auto block = Block();
 			return std::make_unique<ast::FunDeclC>(std::move(name), std::move(returnType), std::move(args), std::move(block));
 		}
@@ -176,8 +188,8 @@ struct Parser {
 			return Block();
 		}
 
-		auto typeOpt = MaybeType();
-		if(typeOpt.second == 0) {
+		auto type = Type();
+		if(type) {
 			ast::Type type = std::move(typeOpt.first);
 			expect(TokenType::IDENTIFIER);
 			ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);

@@ -120,10 +120,10 @@ std::string BlockC::toString() const {
 
 
 
-TypeIdentC::TypeIdentC(std::string n) : name(std::move(n)) {}
-std::string TypeIdentC::toString() const {
-	return name;
-}
+// TypeIdentC::TypeIdentC(std::string n) : name(std::move(n)) {}
+// std::string TypeIdentC::toString() const {
+// 	return name;
+// }
 
 
 
