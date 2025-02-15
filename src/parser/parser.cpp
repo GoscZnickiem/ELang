@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
-#include <stack>
 #include <string>
 #include <utility>
 #include <variant>
@@ -21,7 +20,6 @@ struct Parser {
 	std::vector<Token>* tokens;
 	std::size_t index{};
 	Token token;
-	std::stack<std::size_t> checkPoints;
 
 	[[nodiscard]] TokenType next(std::size_t i = 1) const {
 		return (*tokens)[index + i].type;
@@ -31,7 +29,7 @@ struct Parser {
 			token = (*tokens)[++index];
 		}
 	}
-	void expect(TokenType type) {
+	void eat(TokenType type) {
 		if(next() != type) {
 			throw std::runtime_error("error (at line: " 
 							+ std::to_string((*tokens)[index+1].line) + 
@@ -41,17 +39,9 @@ struct Parser {
 		}
 		eat();
 	}
-	void stepBack(std::size_t n = 1) {
-		index -= n + 1;
-		eat();
-	}
-	void revert() {
-		index = checkPoints.top();
-		checkPoints.pop();
-		eat();
-	}
-	void checkPoint() {
-		checkPoints.push(index - 1);
+	void revert(std::size_t i) {
+		index = i;
+		token = (*tokens)[index];
 	}
 
 	ast::Expression Exp(int p) {
@@ -78,7 +68,7 @@ struct Parser {
 		if(next() == TokenType::PAREN_L) {
 			eat();
 			auto t = Exp(0);
-			expect(TokenType::PAREN_R);
+			eat(TokenType::PAREN_R);
 			return t;
 		}
 		if(next() == TokenType::NUMERAL) {
@@ -102,40 +92,44 @@ struct Parser {
 		throw std::runtime_error("Error: expected expression. line: " + std::to_string(token.line) + ", column " + std::to_string(token.column));
 	}
 
-	ast::Type Type() {
-		ast::Type type;
-		if(next() == TokenType::IDENTIFIER) {
+	std::optional<ast::Type> Type(std::size_t size) {
+		if(next() == TokenType::IDENTIFIER && size == 1) {
 			eat();
-			const auto id = std::make_unique<ast::IdentifierC>(token.data);
+			return std::make_unique<ast::IdentifierC>(token.data);
 		}
-	}
-
-	std::optional<ast::Type> tryType() {
-
+		return std::nullopt;
 	}
 
 	ast::ArgumentDeclList ArgDeclList() {
 		ast::ArgumentDeclList list;
-		expect(TokenType::PAREN_L);
-		while(next() != TokenType::PAREN_R) {
-			expect(TokenType::IDENTIFIER);
-			auto type = std::make_unique<ast::IdentifierC>(token.data);
-			expect(TokenType::IDENTIFIER);
-			auto name = std::make_unique<ast::IdentifierC>(token.data);
-			list.emplace_back(std::move(type), std::move(name));
-			if(next() == TokenType::COMMA) {
-				eat();
-				continue;
+		eat(TokenType::PAREN_L);
+		if(next() != TokenType::PAREN_R) {
+		loop:
+			auto checkpoint = index;
+			std::size_t size = 1;
+			for(auto type = Type(size); type.has_value(); type = Type(++size)) {
+				if(next() == TokenType::IDENTIFIER && (next(2) == TokenType::COMMA || next(2) == TokenType::PAREN_R)) {
+					eat();
+					auto name = std::make_unique<ast::IdentifierC>(token.data);
+					list.emplace_back(std::move(type.value()), std::move(name));
+					if(next() == TokenType::COMMA) {
+						eat();
+						goto loop;
+					}
+					goto end;
+				}
+				revert(index);
 			}
-			break;
+			throw std::runtime_error("Error: expected argument declarator or ')'. line: " + std::to_string(token.line) + ", column " + std::to_string(token.column));
 		}
-		expect(TokenType::PAREN_R);
+	end:
+		eat(TokenType::PAREN_R);
 		return std::move(list);
 	}
 
 	ast::ArgumentList ArgList() {
 		ast::ArgumentList list;
-		expect(TokenType::PAREN_L);
+		eat(TokenType::PAREN_L);
 		while(next() != TokenType::PAREN_R) {
 			list.emplace_back(Exp(0));
 			if(next() == TokenType::COMMA) {
@@ -144,13 +138,13 @@ struct Parser {
 			}
 			break;
 		}
-		expect(TokenType::PAREN_R);
+		eat(TokenType::PAREN_R);
 		return std::move(list);
 	}
 
 	ast::Block Block() {
 		ast::Block block = std::make_unique<ast::BlockC>();
-		expect(TokenType::BRACE_L);
+		eat(TokenType::BRACE_L);
 		const Token temp = token;
 		while(next() != TokenType::BRACE_R) {
 			if(next() == TokenType::END) {
@@ -165,11 +159,11 @@ struct Parser {
 	ast::Instruction Instr() {
 		if(next() == TokenType::KEY_FUN) {
 			eat();
-			expect(TokenType::IDENTIFIER);
+			eat(TokenType::IDENTIFIER);
 			auto name = std::make_unique<ast::IdentifierC>(token.data);
 			auto args = ArgDeclList();
-			expect(TokenType::ARROW_RIGHT);
-			expect(TokenType::IDENTIFIER);
+			eat(TokenType::ARROW_RIGHT);
+			eat(TokenType::IDENTIFIER);
 			auto returnType = std::make_unique<ast::IdentifierC>(token.data);
 			auto block = Block();
 			return std::make_unique<ast::FunDeclC>(std::move(name), std::move(returnType), std::move(args), std::move(block));
@@ -181,30 +175,37 @@ struct Parser {
 				return std::make_unique<ast::ReturnC>();
 			}
 			auto e = Exp(0);
-			expect(TokenType::SEMICOLON);
+			eat(TokenType::SEMICOLON);
 			return std::make_unique<ast::ReturnC>(std::move(e));
 		}
 		if(next() == TokenType::BRACE_L) {
 			return Block();
 		}
 
-		auto type = Type();
-		if(type) {
-			ast::Type type = std::move(typeOpt.first);
-			expect(TokenType::IDENTIFIER);
-			ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);
-			if(next() == TokenType::OP_ASSIGN) {
+		auto checkpoint = index;
+		std::size_t size = 1;
+		for(auto typeOpt = Type(size); typeOpt.has_value(); typeOpt = Type(++size)) {
+			ast::Type type = std::move(typeOpt.value());
+			if(next() == TokenType::IDENTIFIER) {
 				eat();
-				auto exp = Exp(0);
-				expect(TokenType::SEMICOLON);
-				return std::make_unique<ast::VarDeclAssignC>(type, name, exp);
+				ast::Identifier name = std::make_unique<ast::IdentifierC>(token.data);
+				if(next() == TokenType::OP_ASSIGN) {
+					eat();
+					auto exp = Exp(0);
+					eat(TokenType::SEMICOLON);
+					return std::make_unique<ast::VarDeclAssignC>(type, name, exp);
+				}
+				if(next() == TokenType::SEMICOLON) {
+					eat();
+					return std::make_unique<ast::VarDeclC>(type, name);
+				}
 			}
-			expect(TokenType::SEMICOLON);
-			return std::make_unique<ast::VarDeclC>(type, name);
+			revert(checkpoint);
 		}
-		revert(typeOpt.second);
+
 		auto e = Exp(0);
-		expect(TokenType::SEMICOLON);
+		eat(TokenType::SEMICOLON);
+
 		return std::visit(
 			[&](auto& arg) -> ast::Instruction { return std::move(arg); }
 		, e);
@@ -231,7 +232,7 @@ struct Parser {
 		while(next() != TokenType::END) {
 			u.globals.push_back(TopInstr()); 
 		}
-		expect(TokenType::END);
+		eat(TokenType::END);
 		return u;
 	}
 };

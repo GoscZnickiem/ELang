@@ -2,6 +2,8 @@ int x = 20;
 
 fun main() -> int {
 	{
+		int y;
+		bool x = 3 * 7;
 		x = f(x);
 		x = x + 3;
 	}
