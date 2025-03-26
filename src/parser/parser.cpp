@@ -182,7 +182,7 @@ struct Parser {
 			return Block();
 		}
 
-		auto checkpoint = index;
+		const auto checkpoint = index;
 		std::size_t size = 1;
 		for(auto typeOpt = Type(size); typeOpt.has_value(); typeOpt = Type(++size)) {
 			ast::Type type = std::move(typeOpt.value());

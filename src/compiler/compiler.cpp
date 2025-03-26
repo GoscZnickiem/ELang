@@ -31,8 +31,8 @@
 
 namespace elc {
 
-const std::map<ast::Type, llvm::Type*> builtInTypes {
-	
+const std::map<std::string, unsigned> builtinIntTypes {
+	{"i32", 32}
 };
 
 class Compiler {
@@ -46,18 +46,59 @@ public:
 		builder = std::make_unique<llvm::IRBuilder<>>(*llvmContext);
 	}
 
-	// llvm::Function* createFunction(const ast::FunDecl& funDecmake l) {
-	// 	llvm::FunctionType* funType = llvm::FunctionType::get(returnType, parameterTypes, false);
-	// 	llvm::Function* fun = llvm::Function::Create(funType, llvm::Function::ExternalLinkage, name, *module);
-	// 	std::size_t i = 0;
-	// 	for(auto& arg : fun->args()) {
-	// 		arg.setName(parameterNames[i++]);
-	// 	}
-	//
-	// 	llvm::verifyFunction(*fun, &llvm::errs());
-	//
-	// 	return fun;
-	// }
+	std::unique_ptr<llvm::LLVMContext> llvmContext;
+	std::unique_ptr<llvm::IRBuilder<>> builder;
+	std::unique_ptr<llvm::Module> module;
+
+	[[nodiscard]] llvm::Type* readType(const ast::Type& type) const {
+		llvm::Type* result = nullptr;
+		std::visit(visitor{
+			[&](const ast::Identifier& ident) {
+				const std::string& name = ident->name;
+				if(builtinIntTypes.contains(name)) {
+					result = llvm::IntegerType::get(*llvmContext, builtinIntTypes.at(name));
+				} else {
+					throw std::runtime_error("Error: undefined type name " + name);
+				}
+			},
+			[&](const auto& arg) {
+				throw std::runtime_error("Error: unknown type " + arg->toString() + " (how tf did this even happen)");
+			}
+		}, type);
+
+		if(result == nullptr) {
+			throw std::runtime_error("Error: failed to read type " + astToString(type));
+		}
+		return result;
+	}
+
+	[[nodiscard]] llvm::Function* createFunction(const ast::FunDecl& funDecl) const {
+		llvm::Type* returnType = readType(funDecl->returnType);
+		std::vector<llvm::Type*> parameterTypes;
+		for(const auto& arg : funDecl->arguments) {
+			parameterTypes.push_back(readType(arg.first));
+		}
+		llvm::FunctionType* funType = llvm::FunctionType::get(returnType, parameterTypes, false);
+		llvm::Function* fun = llvm::Function::Create(funType, llvm::Function::ExternalLinkage, funDecl->name->name, *module);
+
+		std::size_t i = 0;
+		for(auto& arg : fun->args()) {
+			arg.setName(funDecl->arguments[i++].second->name);
+		}
+
+		llvm::verifyFunction(*fun, &llvm::errs());
+
+		// TODO: block creation
+
+		// llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", fun);
+		// builder->SetInsertPoint(entryBlock);
+		//
+		// llvm::Value* resInt = builder->getInt32(val);
+		// llvm::Value* resI32 = builder->CreateIntCast(resInt, builder->getInt32Ty(), true);
+		// builder->CreateRet(resI32);
+
+		return fun;
+	}
 
 	void compileUnit([[maybe_unused]] const ast::Unit& unit) {
 		module = std::make_unique<llvm::Module>(unit.name, *llvmContext);
@@ -65,26 +106,13 @@ public:
 		for(const auto& e : unit.globals) {
 			std::visit(visitor{
 				[&](const ast::FunDecl& a) {
-					std::cout << "a function declaration! " << a->name->toString() << "\n";
+					auto* _ = createFunction(a);
 				},
 				[&](auto& arg) {
-					std::cout << "Something: " << arg->toString() << "\n";
+					std::cerr << "Well I cannot read this: " << arg->toString() << "\n";
 				}
 			}, e);
 		}
-
-		constexpr uint32_t val = 42;
-		const std::string mainFunName = "main";
-
-		llvm::FunctionType* mainFunType = llvm::FunctionType::get(builder->getInt32Ty(), false);
-		llvm::Function* mainFun = llvm::Function::Create(mainFunType, llvm::Function::ExternalLinkage, mainFunName, *module);
-		verifyFunction(*mainFun);
-		llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", mainFun);
-		builder->SetInsertPoint(entryBlock);
-
-		llvm::Value* resInt = builder->getInt32(val);
-		llvm::Value* resI32 = builder->CreateIntCast(resInt, builder->getInt32Ty(), true);
-		builder->CreateRet(resI32);
 
 		auto targetTriple = llvm::sys::getDefaultTargetTriple();
 		module->setTargetTriple(targetTriple);
@@ -121,11 +149,6 @@ public:
 		pass.run(*module);
 		dest.flush();
 	}
-
-private:
-	std::unique_ptr<llvm::LLVMContext> llvmContext;
-	std::unique_ptr<llvm::IRBuilder<>> builder;
-	std::unique_ptr<llvm::Module> module;
 };
 
 
