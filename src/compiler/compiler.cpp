@@ -2,13 +2,14 @@
 #include "ast.hpp"
 #include "help/visitor.hpp"
 
-// #include <cstddef>
+#include <cstddef>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <variant>
 #include <map>
-// #include <vector>
+#include <vector>
 #include <iostream>
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
@@ -78,6 +79,29 @@ public:
 			[&](const ast::Numeral& num) {
 				// TODO: type?
 				result = builder->getInt32(num->getI32());
+			},
+			[&](const ast::ULeftOperator& op) {
+				llvm::Value* val = compileExpression(op->expr);
+				if(op->op == "-") {
+					result = builder->CreateNeg(val);
+				} else {
+					throw std::runtime_error("Error: Unknown unary left operator " + op->toString());
+				}
+			},
+			[&](const ast::BiOperator& op) {
+				llvm::Value* left = compileExpression(op->left);
+				llvm::Value* right = compileExpression(op->right);
+				if(op->op == "+") {
+					result = builder->CreateAdd(left, right);
+				} else if(op->op == "-") {
+					result = builder->CreateSub(left, right);
+				} else if(op->op == "*") {
+					result = builder->CreateMul(left, right);
+				} else if(op->op == "/") {
+					result = builder->CreateSDiv(left, right);
+				} else {
+					throw std::runtime_error("Error: Unknown unary left operator " + op->toString());
+				}
 			},
 			[&](const auto& arg) {
 				throw std::runtime_error("Error: No idea how to compile " + arg->toString());
