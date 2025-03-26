@@ -1,6 +1,8 @@
 #include "ast.hpp"
 #include "tokens.hpp"
 
+#include <cstdlib>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <memory>
@@ -51,6 +53,9 @@ std::pair<int, int> getUOperatorData(TokenType token) {
 NumeralC::NumeralC(std::string v) : value(std::move(v)) {}
 std::string NumeralC::toString() const {
 	return value;
+}
+uint32_t NumeralC::getI32() const {
+	return std::stol(value);
 }
 
 BoolC::BoolC(bool v) : value(v) {}

@@ -4,6 +4,7 @@
 #include "tokens.hpp"
 #include "help/visitor.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <variant>
@@ -137,6 +138,7 @@ struct NumeralC : public Tomasz {
 	explicit NumeralC(std::string v);
 	std::string value;
 	[[nodiscard]] std::string toString() const final;
+	[[nodiscard]] uint32_t getI32() const;
 };
 
 struct BoolC : public Tomasz {

@@ -3,7 +3,6 @@
 #include "help/visitor.hpp"
 
 // #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <system_error>
@@ -18,6 +17,7 @@
 #include <llvm/TargetParser/Host.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
@@ -72,6 +72,41 @@ public:
 		return result;
 	}
 
+	[[nodiscard]] llvm::Value* compileExpression(const ast::Expression& expr) const {
+		llvm::Value* result = nullptr;
+		std::visit(visitor{
+			[&](const ast::Numeral& num) {
+				// TODO: type?
+				result = builder->getInt32(num->getI32());
+			},
+			[&](const auto& arg) {
+				throw std::runtime_error("Error: No idea how to compile " + arg->toString());
+			}
+		}, expr);
+
+		return result;
+	}
+
+	void compileInstruction(const ast::Instruction& instr) const {
+		std::visit(visitor{
+			[&](const ast::Return& ret) {
+				llvm::Value* expr = compileExpression(ret->expr);
+				// TODO: check return type
+				llvm::Value* resI32 = builder->CreateIntCast(expr, builder->getInt32Ty(), true);
+				builder->CreateRet(resI32);
+			},
+			[&](const auto& arg) {
+				throw std::runtime_error("Error: No idea how to compile " + arg->toString());
+			}
+		}, instr);
+	}
+
+	void compileBlock(const ast::Block& block) const {
+		for(const auto& instr : block->instructions) {
+			compileInstruction(instr);
+		}
+	}
+
 	[[nodiscard]] llvm::Function* createFunction(const ast::FunDecl& funDecl) const {
 		llvm::Type* returnType = readType(funDecl->returnType);
 		std::vector<llvm::Type*> parameterTypes;
@@ -88,14 +123,10 @@ public:
 
 		llvm::verifyFunction(*fun, &llvm::errs());
 
-		// TODO: block creation
+		llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", fun);
+		builder->SetInsertPoint(entryBlock);
 
-		// llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", fun);
-		// builder->SetInsertPoint(entryBlock);
-		//
-		// llvm::Value* resInt = builder->getInt32(val);
-		// llvm::Value* resI32 = builder->CreateIntCast(resInt, builder->getInt32Ty(), true);
-		// builder->CreateRet(resI32);
+		compileBlock(funDecl->body);
 
 		return fun;
 	}
@@ -116,7 +147,6 @@ public:
 
 		auto targetTriple = llvm::sys::getDefaultTargetTriple();
 		module->setTargetTriple(targetTriple);
-
 
 		std::string error;
 		const llvm::Target* target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
