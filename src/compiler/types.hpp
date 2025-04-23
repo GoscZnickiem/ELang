@@ -13,7 +13,7 @@ struct CompiledType {
 	CompiledType &operator=(CompiledType &&) = delete;
 	virtual ~CompiledType() = default;
 
-	bool unified = false;
+	bool unified {false};
 	virtual void unify();
 };
 
@@ -23,11 +23,7 @@ struct IntegerType : public CompiledType {
 		Uint8, Uint16, Uint32, Uint64,
 		Float16, Float32
 	};
-	std::vector<Type> possibleTypes = {
-		Type::Int8, Type::Int16, Type::Int32, Type::Int64,
-		Type::Uint8, Type::Uint16, Type::Uint32, Type::Uint64,
-		Type::Float16, Type::Float32
-	};
+	Type type;
 
 	void unify() final;
 };
@@ -61,6 +57,10 @@ struct PointerType : public CompiledType {
 
 struct FunctionType : public CompiledType {
 	// TODO
+};
+
+struct AmbiguousType {
+	std::vector<CompiledType> possibleTypes;
 };
 
 
