@@ -12,13 +12,14 @@ namespace elc::type {
 
 struct IntegerC; struct StructC; struct UnionC; struct ArrayC; struct PointerC; struct FunctionC;
 using Integer = std::unique_ptr<IntegerC>;
+using Bool = std::unique_ptr<void>;
 using Struct = std::unique_ptr<StructC>;
 using Union = std::unique_ptr<UnionC>;
 using Array = std::unique_ptr<ArrayC>;
 using Pointer = std::unique_ptr<PointerC>;
 using Function = std::unique_ptr<FunctionC>;
 
-using CompiledType = std::variant<Integer, Struct, Union, Array, Pointer, Function>;
+using CompiledType = std::variant<Integer, Bool, Pointer, Struct, Array, Union, Function>;
 
 enum struct IntegerType {
 	Int8, Int16, Int32, Int64,
