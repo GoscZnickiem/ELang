@@ -3,74 +3,66 @@
 
 #include <cstddef>
 #include <memory>
+#include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
-struct CompiledType {
-	CompiledType(const CompiledType &) = default;
-	CompiledType(CompiledType &&) = delete;
-	CompiledType &operator=(const CompiledType &) = default;
-	CompiledType &operator=(CompiledType &&) = delete;
-	virtual ~CompiledType() = default;
+namespace elc::type {
 
-	bool unified {false};
-	virtual void unify();
-	virtual void unify(CompiledType* desired);
+struct IntegerC; struct StructC; struct UnionC; struct ArrayC; struct PointerC; struct FunctionC;
+using Integer = std::unique_ptr<IntegerC>;
+using Struct = std::unique_ptr<StructC>;
+using Union = std::unique_ptr<UnionC>;
+using Array = std::unique_ptr<ArrayC>;
+using Pointer = std::unique_ptr<PointerC>;
+using Function = std::unique_ptr<FunctionC>;
+
+using CompiledType = std::variant<Integer, Struct, Union, Array, Pointer, Function>;
+
+enum struct IntegerType {
+	Int8, Int16, Int32, Int64,
+	Uint8, Uint16, Uint32, Uint64,
+	Float32, Float64
 };
 
-struct IntegerType : public CompiledType {
-	enum struct Type {
-		Int8, Int16, Int32, Int64,
-		Uint8, Uint16, Uint32, Uint64,
-		Float16, Float32
-	};
-	Type type;
-
-	void unify() final;
-	void unify(CompiledType* desired) final;
+struct IntegerC {
+	IntegerType type;
 };
 
-struct StructType : public CompiledType {
+struct StructC {
 	std::string name;
-	std::vector<std::unique_ptr<CompiledType>> members;
-
-	void unify() final;
-	void unify(CompiledType* desired) final;
+	std::vector<CompiledType> members;
 };
 
-struct UnionType : public CompiledType {
+struct UnionC {
 	std::string name;
-	std::vector<std::unique_ptr<CompiledType>> members;
-
-	void unify() final;
-	void unify(CompiledType* desired) final;
+	std::vector<CompiledType> members;
 };
 
-struct ArrayType : public CompiledType {
-	std::unique_ptr<CompiledType> element;
+struct ArrayC {
+	CompiledType element;
 	std::size_t size;
-
-	void unify() final;
-	void unify(CompiledType* desired) final;
 };
 
-struct PointerType : public CompiledType {
-	std::unique_ptr<CompiledType> pointed;
-
-	void unify() final;
-	void unify(CompiledType* desired) final;
+struct PointerC {
+	CompiledType pointed;
 };
 
-struct FunctionType : public CompiledType {
-	// TODO
+struct FunctionC {
+	CompiledType returnType;
+	std::vector<CompiledType> argTypes;
 };
 
-struct AmbiguousType {
-	std::vector<CompiledType> possibleTypes;
+struct AmbiguousC {
+	std::set<CompiledType> possibleTypes;
 
-	void unify();
-	void unify(CompiledType* desired);
+	CompiledType unify();
+	CompiledType unify(CompiledType desired);
 };
 
+bool compiledTypesOrder(const CompiledType& a, const CompiledType& b);
+
+}
 
 #endif // !_ELC_COMPILER_TYPES_

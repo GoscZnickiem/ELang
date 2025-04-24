@@ -1,5 +1,6 @@
 #include "compiler.hpp"
 #include "ast.hpp"
+#include "compiler/types.hpp"
 #include "help/visitor.hpp"
 
 #include <cstddef>
