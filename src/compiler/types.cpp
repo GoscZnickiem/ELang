@@ -1,5 +1,6 @@
 #include "types.hpp"
 #include "help/visitor.hpp"
+#include <exception>
 #include <variant>
 
 namespace elc::type {
@@ -20,117 +21,95 @@ int intTypeOrder(IntegerType t) {
 		case IntegerType::Float64: return 9;
 	}
 }
+
+constexpr int typeOrderHelp(const CompiledType& t) {
+	return std::visit(visitor{
+		[&](const Integer&) { return 0; },
+		[&](const Bool&) { return 1; },
+		[&](const Pointer&) { return 2; },
+		[&](const Struct&) { return 3; },
+		[&](const Array&) { return 4; },
+		[&](const Union&) { return 5; },
+		[&](const Function&) { return 6; }
+	}, t);
+}
+
+bool integerTypeCompare(const Integer& a, const Integer& b) {
+	return intTypeOrder(a->type) < intTypeOrder(b->type);
+}
+constexpr bool pointerTypeCompare(const Pointer& a, const Pointer& b) {
+	return compiledTypesOrder(a->pointed, b->pointed);
+};
+constexpr bool structTypeCompare(const Struct& a, const Struct& b) {
+	if(a->members.size() == b->members.size()) {
+		for(std::size_t i = 0; i < a->members.size(); i++) {
+			if(compiledTypesOrder(a->members[i], b->members[i])) return true;
+			if(compiledTypesOrder(b->members[i], a->members[i])) return false;
+		}
+		return a->name < b->name;
+	}  
+	return a->members.size() < b->members.size();
+};
+constexpr bool arrayTypeCompare(const Array& a, const Array& b) {
+	if(compiledTypesOrder(a->element, b->element)) return true;
+	if(compiledTypesOrder(b->element, a->element)) return false;
+	return a->size < b->size;
+};
+constexpr bool unionTypeCompare(const Union& a, const Union& b) {
+	if(a->members.size() != b->members.size()) return a->members.size() < b->members.size();
+	for(std::size_t i = 0; i < a->members.size(); i++) {
+		if(compiledTypesOrder(a->members[i], b->members[i])) return true;
+		if(compiledTypesOrder(b->members[i], a->members[i])) return false;
+	}
+	return a->name < b->name;
+};
+constexpr bool functionTypeCompare(const Function& a, const Function& b) {
+	if(compiledTypesOrder(a->returnType, b->returnType)) return true;
+	if(compiledTypesOrder(b->returnType, a->returnType)) return false;
+	if(a->argTypes.size() != b->argTypes.size()) return a->argTypes.size() < b->argTypes.size();
+	for(std::size_t i = 0; i < a->argTypes.size(); i++) {
+		if(compiledTypesOrder(a->argTypes[i], b->argTypes[i])) return true;
+		if(compiledTypesOrder(b->argTypes[i], a->argTypes[i])) return false;
+	}
+	return false;
+};
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 
+// it's basically a < b
 bool compiledTypesOrder(const CompiledType& a, const CompiledType& b) {
+	if(typeOrderHelp(a) != typeOrderHelp(b)) {
+		return typeOrderHelp(a) < typeOrderHelp(b); 
+	}
 	return std::visit(visitor{
 		[&](const Integer& a, const Integer& b) {
-			return intTypeOrder(a->type) < intTypeOrder(b->type);
+			return integerTypeCompare(a, b);
 		},
 		[&](const Pointer& a, const Pointer& b) {
-			return compiledTypesOrder(a->pointed, b->pointed);
+			return pointerTypeCompare(a, b);
 		},
 		[&](const Struct& a, const Struct& b) {
-			if(a->members.size() == b->members.size()) {
-				for(std::size_t i = 0; i < a->members.size(); i++) {
-					if(compiledTypesOrder(a->members[i], b->members[i])) return true;
-					if(compiledTypesOrder(b->members[i], a->members[i])) return false;
-				}
-				return a->name < b->name;
-			}  
-			return a->members.size() < b->members.size();
+			return structTypeCompare(a, b);
 		},
 		[&](const Array& a, const Array& b) {
-			if(compiledTypesOrder(a->element, b->element)) return true;
-			if(compiledTypesOrder(b->element, a->element)) return false;
-			return a->size < b->size;
+			return arrayTypeCompare(a, b);
 		},
 		[&](const Union& a, const Union& b) {
-			if(a->members.size() != b->members.size()) return a->members.size() < b->members.size();
-			for(std::size_t i = 0; i < a->members.size(); i++) {
-				if(compiledTypesOrder(a->members[i], b->members[i])) return true;
-				if(compiledTypesOrder(b->members[i], a->members[i])) return false;
-			}
-			return a->name < b->name;
+			return unionTypeCompare(a, b);
 		},
 		[&](const Function& a, const Function& b) {
-			if(compiledTypesOrder(a->returnType, b->returnType)) return true;
-			if(compiledTypesOrder(b->returnType, a->returnType)) return false;
-			if(a->argTypes.size() != b->argTypes.size()) return a->argTypes.size() < b->argTypes.size();
-			for(std::size_t i = 0; i < a->argTypes.size(); i++) {
-				if(compiledTypesOrder(a->argTypes[i], b->argTypes[i])) return true;
-				if(compiledTypesOrder(b->argTypes[i], a->argTypes[i])) return false;
-			}
-			return false;
-		},
-		[&](const Integer&, const Bool&) {
-			return true;
-		},
-		[&](const Integer&, const Pointer&) {
-			return true;
-		},
-		[&](const Integer&, const Struct&) {
-			return true;
-		},
-		[&](const Integer&, const Array&) {
-			return true;
-		},
-		[&](const Integer&, const Union&) {
-			return true;
-		},
-		[&](const Integer&, const Function&) {
-			return true;
-		},
-		[&](const Bool&, const Pointer&) {
-			return true;
-		},
-		[&](const Bool&, const Struct&) {
-			return true;
-		},
-		[&](const Bool&, const Array&) {
-			return true;
-		},
-		[&](const Bool&, const Union&) {
-			return true;
-		},
-		[&](const Bool&, const Function&) {
-			return true;
-		},
-		[&](const Pointer&, const Struct&) {
-			return true;
-		},
-		[&](const Pointer&, const Array&) {
-			return true;
-		},
-		[&](const Pointer&, const Union&) {
-			return true;
-		},
-		[&](const Pointer&, const Function&) {
-			return true;
-		},
-		[&](const Struct&, const Array&) {
-			return true;
-		},
-		[&](const Struct&, const Union&) {
-			return true;
-		},
-		[&](const Struct&, const Function&) {
-			return true;
-		},
-		[&](const Array&, const Union&) {
-			return true;
-		},
-		[&](const Array&, const Function&) {
-			return true;
-		},
-		[&](const Union&, const Function&) {
-			return true;
+			return functionTypeCompare(a, b);
 		},
 		[&](const auto&, const auto&) {
-			return false;
+			throw std::logic_error("You shouldn't be here");
+			return true;
 		}
 	}, a, b);
+}
+
+// a == b
+bool compiledTypesCompare(const CompiledType& a, const CompiledType& b) {
+	return !(compiledTypesCompare(a, b) && compiledTypesCompare(b, a));
 }
 
 }

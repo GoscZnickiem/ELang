@@ -63,6 +63,7 @@ struct AmbiguousC {
 };
 
 bool compiledTypesOrder(const CompiledType& a, const CompiledType& b);
+bool compiledTypesCompare(const CompiledType& a, const CompiledType& b);
 
 }
 
