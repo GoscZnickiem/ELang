@@ -8,11 +8,6 @@
 #include <stdexcept>
 #include <vector>
 
-template<typename ... Callable>
-struct visitor : Callable... {
-	using Callable::operator()...;
-};
-
 int main(int argc, char *argv[]) {
 
 	if(argc < 2) {

@@ -1,36 +1,35 @@
 #include "types.hpp"
 #include "help/visitor.hpp"
-#include <exception>
 #include <variant>
 
 namespace elc::type {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
-namespace { 
+namespace {
 int intTypeOrder(IntegerType t) {
 	switch (t) {
-		case IntegerType::Int32: return 0;
-		case IntegerType::Uint32: return 1;
-		case IntegerType::Int64: return 2;
-		case IntegerType::Uint64: return 3;
-		case IntegerType::Int16: return 4;
-		case IntegerType::Uint16: return 5;
-		case IntegerType::Int8: return 6;
-		case IntegerType::Uint8: return 7;
-		case IntegerType::Float32: return 8;
-		case IntegerType::Float64: return 9;
+		case IntegerType::Int32:	return 0;
+		case IntegerType::Uint32:	return 1;
+		case IntegerType::Int64:	return 2;
+		case IntegerType::Uint64:	return 3;
+		case IntegerType::Int16:	return 4;
+		case IntegerType::Uint16:	return 5;
+		case IntegerType::Int8:		return 6;
+		case IntegerType::Uint8:	return 7;
+		case IntegerType::Float32:	return 8;
+		case IntegerType::Float64:	return 9;
 	}
 }
 
 constexpr int typeOrderHelp(const CompiledType& t) {
 	return std::visit(visitor{
-		[&](const Integer&) { return 0; },
-		[&](const Bool&) { return 1; },
-		[&](const Pointer&) { return 2; },
-		[&](const Struct&) { return 3; },
-		[&](const Array&) { return 4; },
-		[&](const Union&) { return 5; },
-		[&](const Function&) { return 6; }
+		[&](const Integer&)		{ return 0; },
+		[&](const Bool&)		{ return 1; },
+		[&](const Pointer&)		{ return 2; },
+		[&](const Struct&)		{ return 3; },
+		[&](const Array&)		{ return 4; },
+		[&](const Union&)		{ return 5; },
+		[&](const Function&)	{ return 6; }
 	}, t);
 }
 
@@ -101,7 +100,7 @@ bool compiledTypesOrder(const CompiledType& a, const CompiledType& b) {
 			return functionTypeCompare(a, b);
 		},
 		[&](const auto&, const auto&) {
-			throw std::logic_error("You shouldn't be here");
+			throw std::logic_error("You were too silly, machine");
 			return true;
 		}
 	}, a, b);
