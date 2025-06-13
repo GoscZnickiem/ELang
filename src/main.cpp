@@ -33,12 +33,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	for(auto& arg : arguments) {
-		std::cout << "File " << arg << ":\n";
-		std::ifstream file(arg);
-		if(!file.is_open()) {
-			std::cerr << "unable to open file " << arg << "\n";
-			continue;
-		}
 
 		std::vector<elc::Token> tokens;
 		try {
@@ -48,10 +42,9 @@ int main(int argc, char *argv[]) {
 				std::cout << token << "\n";
 			}
 			std::cerr << "\033[1;31m================\n";
-			std::cout << "Lexing error:\033[0m\n";
+			std::cerr << "Lexing error:\033[0m\n";
 			std::cerr << e.what() << "\n";
 		}
-		file.close();
 
 		elc::ast::Unit unit;
 		try {
@@ -59,7 +52,7 @@ int main(int argc, char *argv[]) {
 			unit.name = arg;
 		} catch (std::runtime_error& e) {
 			std::cerr << "\033[1;31m================\n";
-			std::cout << "Parsing error:\033[0m\n";
+			std::cerr << "Parsing error:\033[0m\n";
 			std::cerr << e.what() << "\n";
 			continue;
 		}

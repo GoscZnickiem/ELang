@@ -4,11 +4,22 @@
 #include "ast.hpp"
 #include "tokens.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace elc {
 
-ast::Unit parse(std::vector<Token>& tokens);
+class CompilationUnit;
+
+class Parser {
+public:
+	explicit Parser(CompilationUnit* root);
+
+	std::optional<ast::Instruction> getInstruction();
+
+private:
+	std::vector<Token>* tokenBuffer;
+};
 
 }
 

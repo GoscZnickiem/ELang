@@ -112,7 +112,7 @@ public:
 		return result;
 	}
 
-	void compileInstruction(const ast::Instruction& instr) const {
+	void compileInstruction(const ast::Statement& instr) const {
 		std::visit(visitor{
 			[&](const ast::Return& ret) {
 				llvm::Value* expr = compileExpression(ret->expr);

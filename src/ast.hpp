@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -49,18 +50,33 @@ struct flatVariantBase<T>{
 template<typename...T>
 using variant = flatVariantBase<T...>::type;
 
+template <typename T, typename Variant>
+struct matchesVariantT;
+
+template <typename T, typename... Types>
+struct matchesVariantT<T, std::variant<Types...>> 
+	: std::disjunction<std::is_same<T, Types>...> {};
+
+template <typename VariantSubset, typename T>
+std::optional<VariantSubset> matchesVariant(const T& value) {
+	if constexpr (matchesVariantT<T, VariantSubset>::value) {
+		return VariantSubset{value};
+	} else {
+		return std::nullopt;
+	}
+}
 
 // ========================================================== //
 //              Atomic types forward declarations
 // ========================================================== //
 
-struct Tomasz {
-	Tomasz() = default;
-	Tomasz(const Tomasz&) = default;
-	Tomasz(Tomasz&&) = delete;
-	Tomasz &operator=(const Tomasz&) = default;
-	Tomasz &operator=(Tomasz&&) = default;
-	virtual ~Tomasz() = default;
+struct Item {
+	Item() = default;
+	Item(const Item&) = default;
+	Item(Item&&) = delete;
+	Item &operator=(const Item&) = default;
+	Item &operator=(Item&&) = default;
+	virtual ~Item() = default;
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
@@ -72,7 +88,7 @@ using Identifier = std::unique_ptr<IdentifierC>;
 using ULeftOperator = std::unique_ptr<ULeftOperatorC>;
 using BiOperator = std::unique_ptr<BiOperatorC>;
 using FunCall = std::unique_ptr<FunCallC>;
-// Atomic instructions
+// Atomic statements
 struct ReturnC; struct BlockC; struct VarDeclC; struct VarDeclAssignC; struct FunDeclC;
 using Return = std::unique_ptr<ReturnC>;
 using Block = std::unique_ptr<BlockC>;
@@ -100,12 +116,20 @@ using Expression = variant<
 	Numeral, Bool, Identifier, ULeftOperator, BiOperator, FunCall
 >;
 
+// using MetaDeclaration = variant<
+//	FunctorDecl
+// >;
+
 using Declaration = variant<
 	VarDecl, VarDeclAssign, FunDecl
 >;
 
+using Statement = variant<
+	Expression, Block, Return
+>;
+
 using Instruction = variant<
-	Expression, Declaration, Block, Return
+	Statement, Declaration //, MetaDeclaration
 >;
 
 using Kind = variant<
@@ -134,26 +158,26 @@ std::string astToString(const V& arg) {
 
 // Expressions:
 
-struct NumeralC : public Tomasz {
+struct NumeralC : public Item {
 	explicit NumeralC(std::string v);
 	std::string value;
 	[[nodiscard]] std::string toString() const final;
 	[[nodiscard]] uint32_t getI32() const;
 };
 
-struct BoolC : public Tomasz {
+struct BoolC : public Item {
 	explicit BoolC(bool v);
 	bool value;
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct IdentifierC : public Tomasz {
+struct IdentifierC : public Item {
 	explicit IdentifierC(std::string n);
 	std::string name;
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct ULeftOperatorC : public Tomasz {
+struct ULeftOperatorC : public Item {
 	ULeftOperatorC(Expression&& e, std::string o);
 	ULeftOperatorC(Expression& e, std::string o);
 	Expression expr;
@@ -161,7 +185,7 @@ struct ULeftOperatorC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct BiOperatorC : public Tomasz {
+struct BiOperatorC : public Item {
 	BiOperatorC(Expression&& l, Expression&& r, std::string o);
 	BiOperatorC(Expression& l, Expression& r, std::string o);
 	Expression left;
@@ -170,7 +194,7 @@ struct BiOperatorC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct FunCallC : public Tomasz {
+struct FunCallC : public Item {
 	FunCallC(Identifier&& n, ArgumentList&& args);
 	FunCallC(Identifier& n, ArgumentList& args);
 	Identifier name;
@@ -180,7 +204,7 @@ struct FunCallC : public Tomasz {
 
 // Instructions:
 
-struct ReturnC : public Tomasz {
+struct ReturnC : public Item {
 	explicit ReturnC(Expression&& e);
 	explicit ReturnC(Expression& e);
 	ReturnC() = default;
@@ -188,13 +212,13 @@ struct ReturnC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct BlockC : public Tomasz {
+struct BlockC : public Item {
 	BlockC() = default;
-	std::vector<Instruction> instructions;
+	std::vector<Statement> instructions;
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct VarDeclC : public Tomasz {
+struct VarDeclC : public Item {
 	VarDeclC(Type&& t, Identifier&& n);
 	VarDeclC(Type& t, Identifier& n);
 	Type type;
@@ -202,7 +226,7 @@ struct VarDeclC : public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct VarDeclAssignC: public Tomasz {
+struct VarDeclAssignC: public Item {
 	VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e);
 	VarDeclAssignC(Type& t, Identifier& n, Expression& e);
 	Type type;
@@ -211,7 +235,7 @@ struct VarDeclAssignC: public Tomasz {
 	[[nodiscard]] std::string toString() const final;
 };
 
-struct FunDeclC : public Tomasz {
+struct FunDeclC : public Item {
 	FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b);
 	FunDeclC(Identifier& n, Type& t, ArgumentDeclList& args, Block& b);
 	Identifier name;
@@ -238,18 +262,6 @@ struct FunDeclC : public Tomasz {
 // };
 
 // Types
-
-
-
-// ========================================================== //
-//                     Compilation Unit
-// ========================================================== //
-
-struct Unit {
-	std::string name;
-	std::vector<Declaration> globals;
-};
-
 
 }
 
