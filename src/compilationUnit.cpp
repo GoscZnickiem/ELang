@@ -1,6 +1,6 @@
 #include "compilationUnit.hpp"
 #include "lexer/lexer.hpp"
-#include "parser/parser.hpp"
+#include "parser/indexer.hpp"
 #include "data/types.hpp"
 
 #include <fstream>
@@ -15,7 +15,7 @@ namespace {
 void processFile(std::ifstream& sourceFile) {
 	std::list<Token> tokens;
 	try{
-		tokens = tokenize(sourceFile);
+		tokens = lex(sourceFile);
 	} catch (std::runtime_error& e) {
 		for(auto& token : tokens) {
 			std::cout << token << "\n";
@@ -26,12 +26,7 @@ void processFile(std::ifstream& sourceFile) {
 		return;
 	}
 
-	auto moduleSymbols = getModuleSymbols(tokens);
-
-	std::map<std::string, type::CompiledType> symbols;
-	for(auto& symbol : moduleSymbols) {
-
-	}
+	auto stubs = index(tokens);
 }
 
 }

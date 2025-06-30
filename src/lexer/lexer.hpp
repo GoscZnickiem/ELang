@@ -8,7 +8,7 @@
 
 namespace elc {
 
-[[nodiscard]] std::list<Token> tokenize(std::istream& stream);
+[[nodiscard]] std::list<Token> lex(std::istream& stream);
 
 }
 

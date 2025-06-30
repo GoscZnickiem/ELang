@@ -260,7 +260,7 @@ void stateSlash(std::list<Token>& tokens, State& state, std::string& buffer, Tok
 
 }
 
-std::list<Token> tokenize(std::istream& stream) {
+std::list<Token> lex(std::istream& stream) {
 	State state = State::INIT;
 	std::list<Token> tokens;
 	std::string buffer;
