@@ -7,7 +7,7 @@ namespace elc {
 namespace {
 
 std::list<Stub> listNamespaceContents(std::list<Token>& tokens) {
-	std::string space;
+
 }
 
 }
