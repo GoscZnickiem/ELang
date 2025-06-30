@@ -1,25 +1,20 @@
 #ifndef _ELC_PARSER_PARSER_
 #define _ELC_PARSER_PARSER_
 
-#include "ast.hpp"
-#include "tokens.hpp"
+#include "data/tokens.hpp"
 
-#include <optional>
+#include <list>
+#include <string>
 #include <vector>
 
 namespace elc {
 
-class CompilationUnit;
-
-class Parser {
-public:
-	explicit Parser(CompilationUnit* root);
-
-	std::optional<ast::Instruction> getInstruction();
-
-private:
-	std::vector<Token>* tokenBuffer;
+struct ModuleSymbolCode {
+	std::string name;
+	std::list<Token> tokens;
 };
+
+[[nodiscard]] std::vector<ModuleSymbolCode> getModuleSymbols(std::list<Token>& tokens);
 
 }
 

@@ -15,6 +15,8 @@
 
 namespace elc {
 
+Parser::Parser(CompilationUnit* parent) : root(parent) { }
+
 struct Parser {
 	explicit Parser(std::vector<Token>& t) : tokens(&t), token((*tokens)[0]) {}
 	std::vector<Token>* tokens;

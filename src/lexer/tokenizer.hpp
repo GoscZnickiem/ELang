@@ -1,7 +1,7 @@
 #ifndef _ELC_LEXER_TOKENIZER_
 #define _ELC_LEXER_TOKENIZER_
 
-#include "tokens.hpp"
+#include "data/tokens.hpp"
 #include "states.hpp"
 #include <cctype>
 #include <cstddef>

@@ -1,4 +1,4 @@
-#include "ast.hpp"
+#include "data/ast.hpp"
 #include "compiler/compiler.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
@@ -33,18 +33,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	for(auto& arg : arguments) {
-
-		std::vector<elc::Token> tokens;
-		try {
-			tokens = elc::tokenize(file);
-		} catch (std::runtime_error& e) {
-			for(auto& token : tokens) {
-				std::cout << token << "\n";
-			}
-			std::cerr << "\033[1;31m================\n";
-			std::cerr << "Lexing error:\033[0m\n";
-			std::cerr << e.what() << "\n";
-		}
 
 		elc::ast::Unit unit;
 		try {

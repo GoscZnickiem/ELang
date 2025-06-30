@@ -7,6 +7,7 @@
 #include <utility>
 #include <memory>
 #include <variant>
+#include <optional>
 
 namespace elc::ast {
 
@@ -137,15 +138,10 @@ VarDeclC::VarDeclC(Type&& t, Identifier&& n)
 VarDeclC::VarDeclC(Type& t, Identifier& n) 
 : type(std::move(t)), name(std::move(n)) {}
 std::string VarDeclC::toString() const {
+	if(expr.has_value()) {
+		return "variable " + name->toString() + " of type " + astToString(type) + " with associated expression " + astToString(*expr);
+	}
 	return "variable " + name->toString() + " of type " + astToString(type);
-}
-
-VarDeclAssignC::VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e)
-: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-VarDeclAssignC::VarDeclAssignC(Type& t, Identifier& n, Expression& e) 
-: type(std::move(t)), name(std::move(n)), expr(std::move(e)) {}
-std::string VarDeclAssignC::toString() const {
-	return "variable " + name->toString() + " of type " + astToString(type) + " = " + astToString(expr);
 }
 
 FunDeclC::FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b)

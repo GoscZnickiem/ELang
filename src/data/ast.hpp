@@ -1,5 +1,5 @@
-#ifndef _ELC_AST_
-#define _ELC_AST_
+#ifndef _ELC_DATA_AST_
+#define _ELC_DATA_AST_
 
 #include "tokens.hpp"
 #include "help/visitor.hpp"
@@ -89,11 +89,10 @@ using ULeftOperator = std::unique_ptr<ULeftOperatorC>;
 using BiOperator = std::unique_ptr<BiOperatorC>;
 using FunCall = std::unique_ptr<FunCallC>;
 // Atomic statements
-struct ReturnC; struct BlockC; struct VarDeclC; struct VarDeclAssignC; struct FunDeclC;
+struct ReturnC; struct BlockC; struct VarDeclC; struct FunDeclC;
 using Return = std::unique_ptr<ReturnC>;
 using Block = std::unique_ptr<BlockC>;
 using VarDecl = std::unique_ptr<VarDeclC>;
-using VarDeclAssign = std::unique_ptr<VarDeclAssignC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
 // Kinds
 // struct KindDeclC;
@@ -121,7 +120,7 @@ using Expression = variant<
 // >;
 
 using Declaration = variant<
-	VarDecl, VarDeclAssign, FunDecl
+	VarDecl, FunDecl
 >;
 
 using Statement = variant<
@@ -223,15 +222,7 @@ struct VarDeclC : public Item {
 	VarDeclC(Type& t, Identifier& n);
 	Type type;
 	Identifier name;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct VarDeclAssignC: public Item {
-	VarDeclAssignC(Type&& t, Identifier&& n, Expression&& e);
-	VarDeclAssignC(Type& t, Identifier& n, Expression& e);
-	Type type;
-	Identifier name;
-	Expression expr;
+	std::optional<Expression> expr;
 	[[nodiscard]] std::string toString() const final;
 };
 
@@ -265,4 +256,4 @@ struct FunDeclC : public Item {
 
 }
 
-#endif // !_ELC_AST_
+#endif // !_ELC_DATA_AST_

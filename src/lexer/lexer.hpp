@@ -1,14 +1,14 @@
 #ifndef _ELC_LEXER_LEXER_
 #define _ELC_LEXER_LEXER_
 
-#include "tokens.hpp"
+#include "data/tokens.hpp"
 
 #include <istream>
-#include <vector>
+#include <list>
 
 namespace elc {
 
-std::vector<Token> tokenize(std::istream& stream);
+[[nodiscard]] std::list<Token> tokenize(std::istream& stream);
 
 }
 

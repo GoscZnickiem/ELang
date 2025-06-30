@@ -6,34 +6,34 @@ namespace elc::type {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 namespace {
-int intTypeOrder(IntegerType t) {
+int intTypeOrder(IntegralType t) {
 	switch (t) {
-		case IntegerType::Int32:	return 0;
-		case IntegerType::Uint32:	return 1;
-		case IntegerType::Int64:	return 2;
-		case IntegerType::Uint64:	return 3;
-		case IntegerType::Int16:	return 4;
-		case IntegerType::Uint16:	return 5;
-		case IntegerType::Int8:		return 6;
-		case IntegerType::Uint8:	return 7;
-		case IntegerType::Float32:	return 8;
-		case IntegerType::Float64:	return 9;
+		case IntegralType::Int32:	return 0;
+		case IntegralType::Uint32:	return 1;
+		case IntegralType::Int64:	return 2;
+		case IntegralType::Uint64:	return 3;
+		case IntegralType::Int16:	return 4;
+		case IntegralType::Uint16:	return 5;
+		case IntegralType::Int8:	return 6;
+		case IntegralType::Uint8:	return 7;
+		case IntegralType::Float32:	return 8;
+		case IntegralType::Float64:	return 9;
+		case IntegralType::Bool:	return 10;
 	}
 }
 
 constexpr int typeOrderHelp(const CompiledType& t) {
 	return std::visit(visitor{
-		[&](const Integer&)		{ return 0; },
-		[&](const Bool&)		{ return 1; },
-		[&](const Pointer&)		{ return 2; },
-		[&](const Struct&)		{ return 3; },
-		[&](const Array&)		{ return 4; },
-		[&](const Union&)		{ return 5; },
-		[&](const Function&)	{ return 6; }
+		[&](const Integral&)	{ return 0; },
+		[&](const Pointer&)		{ return 1; },
+		[&](const Struct&)		{ return 2; },
+		[&](const Array&)		{ return 3; },
+		[&](const Union&)		{ return 4; },
+		[&](const Function&)	{ return 5; }
 	}, t);
 }
 
-bool integerTypeCompare(const Integer& a, const Integer& b) {
+bool integralTypeCompare(const Integral& a, const Integral& b) {
 	return intTypeOrder(a->type) < intTypeOrder(b->type);
 }
 constexpr bool pointerTypeCompare(const Pointer& a, const Pointer& b) {
@@ -81,8 +81,8 @@ bool compiledTypesOrder(const CompiledType& a, const CompiledType& b) {
 		return typeOrderHelp(a) < typeOrderHelp(b); 
 	}
 	return std::visit(visitor{
-		[&](const Integer& a, const Integer& b) {
-			return integerTypeCompare(a, b);
+		[&](const Integral& a, const Integral& b) {
+			return integralTypeCompare(a, b);
 		},
 		[&](const Pointer& a, const Pointer& b) {
 			return pointerTypeCompare(a, b);
@@ -100,7 +100,7 @@ bool compiledTypesOrder(const CompiledType& a, const CompiledType& b) {
 			return functionTypeCompare(a, b);
 		},
 		[&](const auto&, const auto&) {
-			throw std::logic_error("You were too silly, machine");
+			throw std::logic_error("You were too silly, Machine");
 			return true;
 		}
 	}, a, b);

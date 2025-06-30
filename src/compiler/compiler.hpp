@@ -1,7 +1,7 @@
 #ifndef _ELC_COMPILER_COMPILER_
 #define _ELC_COMPILER_COMPILER_
 
-#include "ast.hpp"
+#include "data/ast.hpp"
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>

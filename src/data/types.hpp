@@ -1,5 +1,5 @@
-#ifndef _ELC_COMPILER_TYPES_
-#define _ELC_COMPILER_TYPES_
+#ifndef _ELC_DATA_TYPES_
+#define _ELC_DATA_TYPES_
 
 #include <cstddef>
 #include <memory>
@@ -10,25 +10,25 @@
 
 namespace elc::type {
 
-struct IntegerC; struct StructC; struct UnionC; struct ArrayC; struct PointerC; struct FunctionC;
-using Integer = std::unique_ptr<IntegerC>;
-using Bool = std::unique_ptr<void>;
+struct IntegralC; struct StructC; struct UnionC; struct ArrayC; struct PointerC; struct FunctionC;
+using Integral = std::unique_ptr<IntegralC>;
 using Struct = std::unique_ptr<StructC>;
 using Union = std::unique_ptr<UnionC>;
 using Array = std::unique_ptr<ArrayC>;
 using Pointer = std::unique_ptr<PointerC>;
 using Function = std::unique_ptr<FunctionC>;
 
-using CompiledType = std::variant<Integer, Bool, Pointer, Struct, Array, Union, Function>;
+using CompiledType = std::variant<Integral, Pointer, Struct, Array, Union, Function>;
 
-enum struct IntegerType {
+enum struct IntegralType {
 	Int8, Int16, Int32, Int64,
 	Uint8, Uint16, Uint32, Uint64,
-	Float32, Float64
+	Float32, Float64,
+	Bool
 };
 
-struct IntegerC {
-	IntegerType type;
+struct IntegralC {
+	IntegralType type;
 };
 
 struct StructC {
@@ -67,4 +67,4 @@ bool compiledTypesCompare(const CompiledType& a, const CompiledType& b);
 
 }
 
-#endif // !_ELC_COMPILER_TYPES_
+#endif // !_ELC_DATA_TYPES_
