@@ -21,7 +21,7 @@ fun main() -> int {
 
 ========================================================
 
-def Vec = struct {
+type Vec = struct {
 	float x;
 	float y;
 };
@@ -30,7 +30,7 @@ fun main() -> int {
 	Vec v;
 	v.x = 1;
 	v.y = 1;
-	Vec u = {1, 2}; // {1, 2} isn't a struct but structs and algebraic products can be used interchangebly for convenience
+	Vec u = {1, 2};
 	u.x += v.x;
 	u.y += v.y;
 	return u.x * 10 + u.y;
@@ -38,51 +38,59 @@ fun main() -> int {
 
 ========================================================
 
-def Human = string * age;
-
-fun main() -> int {
-	Human ryszard = {"ryszard", 58};
-	return ryszard[1]; // like an array?
-}
-
-========================================================
-
-def OptionalInt = int | unit;
-
-fun main() -> int {
-	OptionalInt i = 5;
-	int res = 
-		match i with
-		| int x -> x;
-		| unit -> 0;
-	// lub też:
-	int res;
-	match i with
-	| int x -> res = x;
-	| unit -> res = 0;
-
-	return res;
-}
-
-========================================================
-
 type T = int; // kind value declaration
-def U = int; // ain't this the same tho?
 
 fun main() -> int {
 	T x = 15;
-	U y = 16;
-	return 15 + 16;
+	return x + 16;
 }
+
+=======================================================
+
+fun main() -> int {
+	return 5 operator _ @ _ [](int a, int b) { return a * b + 1; } 7;
+}   // returns 36
 
 ========================================================
 
-functor Optional<type T> -> type = T | unit;
+fun main() -> int {
+	return true operator _ @ _ @ _ [](bool p, int a, int b) { if(p) return a; else return b; } 23 @ 42;
+}   // returns 23
+
+// fucking three-way anonymous operator bruh
+
+========================================================
+
+functor Optional<type T> -> type:
+	class {
+		T value;
+		bool exists;
+	public:
+		T& get() {
+			if (exists)
+				return value;
+			throw error("value doesn't exist")
+		};
+	};
+
+functor = <implicit type T> -> (Optional<T>&, T&) -> T&:
+	operator _ @ _ [](Optional<T>& opt, T& arg) -> T& {
+		return opt.value = arg;
+	};
+
+functor = <implicit type T> -> (T&, Optional<T>&) -> T&:
+	operator _ @ _ [](T& arg, Optional<T>& opt) -> T& {
+		return arg = opt.get();
+	};
+
+functor * <implicit type T> -> (Optional<T>&) -> T&:
+	operator _ * [](Optional<T>& opt) -> T& {
+		return opt.get();
+	}
 
 fun main() -> int {
 	Optional<int> i = 5; 
-	// ... kod taki jak wyżej
-	return res;
+	return *i;
 }
 
 ========================================================

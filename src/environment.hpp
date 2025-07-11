@@ -1,6 +1,8 @@
 #ifndef _ELC_ENVIRONMENT_
 #define _ELC_ENVIRONMENT_
 
+
+
 struct Environment {
 	int x;
 
