@@ -2,9 +2,11 @@ Fuck.
 
 ========================================================
 
+// function declaration
+
 fun main() -> int {
 	return 42;
-}
+};
 
 ========================================================
 
@@ -12,7 +14,7 @@ fun f(int a, int b) -> int {
 	int x = a + b;
 	int y = a * b;
 	return x + y;
-}
+};
 
 fun main() -> int {
 	int r = f(4, 6)
@@ -21,16 +23,30 @@ fun main() -> int {
 
 ========================================================
 
+// auto return type
+
+fun f(int a, int b) {
+	return a + b * a;
+}
+
+fun main() {
+	return f(2, 5);
+}
+
+========================================================
+
+// type declaration and struct types
+
 type Vec = struct {
 	float x;
 	float y;
 };
 
-fun main() -> int {
+fun main() {
 	Vec v;
 	v.x = 1;
 	v.y = 1;
-	Vec u = {1, 2};
+	Vec u = Vec{1, 2};
 	u.x += v.x;
 	u.y += v.y;
 	return u.x * 10 + u.y;
@@ -38,30 +54,156 @@ fun main() -> int {
 
 ========================================================
 
-type T = int; // kind value declaration
+type T = int;
 
-fun main() -> int {
+fun main() {
 	T x = 15;
 	return x + 16;
 }
 
 =======================================================
 
+// anonymous functions (lambdas)
+
+Syntax:
+@(ARGS) -> RETURNTYPE { BODY } ===> value of type (ARGS) -> RETURNTYPE
+
+fun apply(fun(int) -> int f) {
+	return f(5);
+};
+
+fun g(int a) -> int {
+	return a * 3;
+};
+
+fun main() {
+	fun(int) -> int f = fun(int a) -> int { return a + 5; };
+	return apply(f) + apply(g);
+};	// returns 25
+
+fun main() {
+	return @(int a, int b) -> int { return a + b + a * b; } (5, 6);
+};	// returns 41
+
+// in fact:
+fun f(...) -> ... {...};
+// is just a syntactic sugar for:
+fun(...) -> ... f = fun(...) -> ... {...};
+
+=======================================================
+
+// anonymous functions auto return type
+
+fun main() {
+	return @(int a, int b) { return a + b + a * b; } (5, 6);
+};	// returns 41
+
+=======================================================
+
+// operator declaration
+
+operator _ # _ {+}(int a, int b) -> int {
+	return a * b - a - b;
+};
+
 fun main() -> int {
-	return 5 operator _ @ _ [](int a, int b) { return a * b + 1; } 7;
-}   // returns 36
+	return 2 * 3 # 4;
+};	// returns 14
+
+=======================================================
+
+// precedence level declaration
+
+precedence Balls { left }; // "left" meaning associativity to left
+
+precedence Balls above * < >; // or "below"
+
+// can be put together:
+
+precedence Cubes { right };
+precedence Balls { left } above * below Cubes;
+
+operator _ # _ {Balls}(int a, int b) {
+	return a * b - a - b;
+};
+
+fun main() {
+	return 2 * 3 # 4;
+};	// returns 10
+
+=======================================================
+
+// anonymous operator (lambda operator if you will)
+
+fun main() {
+	return 5 operator _ @ _ (int a, int b) { return a * b + 1; } 7;
+};	// returns 36
 
 ========================================================
 
-fun main() -> int {
-	return true operator _ @ _ @ _ [](bool p, int a, int b) { if(p) return a; else return b; } 23 @ 42;
-}   // returns 23
+fun main() {
+	return 
+		true 
+		operator _ @ _ _ {+}(bool p, int a, int b) { if(p) return a; else return b; }
+		23 
+		42;
+};	// returns 23
 
 // fucking three-way anonymous operator bruh
 
 ========================================================
 
-functor Optional<type T> -> type:
+// FUNCTORS MY BELOVED :DDDD
+
+functor NAME <ARGUMENTS> -> RESULT;
+
+functor ex1<type A> -> 
+	class{
+		A* data;
+		size_t size;
+		// vector
+	};
+
+functor ex2<type T> ->
+	fun (T x) -> void {
+		print(x);
+	};
+
+========================================================
+
+// implicit functors (can be viewed as its result kind after calling with deduced argument)
+// (hopefully its implementable)
+
+implicit functor smart_print <type T> ->
+	fun(T x) {
+		print(x);
+	};
+
+fun main() {
+	smart_print("Hello World!");
+};
+
+========================================================
+
+// implicit functor syntactic sugar
+
+fun ex(implicit type F f, std::vector<implicit type T> v) {
+	for(each x in v) {
+		f(x);
+	}
+};
+
+// is a shortcut for:
+implicit functor ex<type F, type T> ->
+	fun(F f, std::vector<T> v) {
+		for(each x in v) {
+			f(x);
+		}
+	};
+
+========================================================
+
+functor Optional<type T> ->
 	class {
 		T value;
 		bool exists;
@@ -73,71 +215,19 @@ functor Optional<type T> -> type:
 		};
 	};
 
-functor = <implicit type T> -> (Optional<T>&, T&) -> T&:
-	operator _ @ _ [](Optional<T>& opt, T& arg) -> T& {
-		return opt.value = arg;
-	};
+operator _ = _ (Optional<implicit type T>& opt, T& arg) -> T& {
+	return opt.value = arg;
+};
 
-functor = <implicit type T> -> (T&, Optional<T>&) -> T&:
-	operator _ @ _ [](T& arg, Optional<T>& opt) -> T& {
-		return arg = opt.get();
-	};
+operator _ = _ (implicit type T& arg, Optional<T>& opt) -> T& {
+	return arg = opt.get();
+};
 
-functor * <implicit type T> -> (Optional<T>&) -> T&:
-	operator _ * [](Optional<T>& opt) -> T& {
-		return opt.get();
-	}
+operator _ * (Optional<implicit type T>& opt) -> T& {
+	return opt.get();
+};
 
 fun main() -> int {
 	Optional<int> i = 5; 
 	return *i;
-}
-
-========================================================
-
-functor Add<int a, int b> -> int = a + b; // it is in fact useless but why wouldn't this work?
-
-fun main() -> int {
-	return Add<12, 30>;
-}
-
-========================================================
-
-functor Adder<int a> ->
-	fun(int b) -> int = {
-		return a + b;
-	}
-// also useless but still why not. Also the notation is fucked but I didn't think about anonymous functions (lambdas)
-
-fun add2(int) -> int = Adder<2>;
-
-fun main() -> int {
-	return add2(3) + Adder<8>(15);
-}
-
-========================================================
-
-// https://betterttv.com/emotes/662e62934e3d1ff63d186407
-functor Adder<type T> -> functor<T a> -> fun(T b) -> T =
-	functor<T a> -> fun(T b) -> T = 
-		fun(T b) -> T = {
-			return a + b;
-		}
-// this is unacceptable. The format: functor name<arguments> -> return kind = ... doesn't work with anonymous functor construction: functor<arguments> -> return kind = ...
-// Also I don't know if functor should be a kind. Seems useful but also cursed and hard af to implement. After all functions CAN'T return functions.
-// Then again it would be useful because otherwise how do we do functor<type T, T value>? We kinda can't or it would be atrocious.
-
-========================================================
-
-// I could infer the return kind tho...
-functor Adder<type T> -> 
-	functor<T a> -> 
-		fun(T b) -> T { // could also type infer the return type of anonymous functions
-			return a + b;
-		}
-// That is a bit more acceptable ig. Allows for lukier syntaktyczny:
-functor Adder<type T, T a> ->
-	fun<T a> -> T {
-		return a + b;
-	}
-// The compiler could very easily interpret this as if it was written like the above version
+};
