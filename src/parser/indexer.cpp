@@ -1,102 +1,212 @@
 #include "indexer.hpp"
 #include "data/tokens.hpp"
+#include <cstddef>
 #include <list>
+#include <map>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
 namespace elc {
 
 namespace {
 
-std::pair<Stub, std::list<Token>::iterator> identifyStub(std::list<Token>::iterator it) {
+struct Namespace;
 
-}
+struct UnidentifiedStub {
+	std::list<Token> tokens;
+	Namespace* space{};
+};
 
-std::pair<std::list<Stub>, std::list<Token>::iterator> listContents(std::list<Token>& tokens, std::string space);
+struct Stub {
+	std::string name;
+	std::list<Token> tokens;
+	Namespace* space{};
+};
 
-std::pair<std::list<Stub>, std::list<Token>::iterator> processNamespace(std::list<Token>& tokens, std::string space) {
-	std::list<Stub> stubs;
+std::list<Token>::iterator findEndOfStatement(std::list<Token>& tokens) {
+	std::size_t braceBalance = 0;
 	auto it = tokens.begin();
-
-	it++;
-	if(it->type != TokenType::SYMBOL) {
-		throw std::runtime_error("Error: expected namespace name but '" +
-						   it->data +
-						   "' encountered. Line: " +
-						   std::to_string(it->metadata.lineEnd) + 
-						   ", Column: " + 
-						   std::to_string(it->metadata.columnEnd) +
-						   ".");
+	while(true) {
+		if(it->type == TokenType::BRACE_L) {
+			braceBalance++;
+		} else if(it->type == TokenType::BRACE_R) {
+			braceBalance--;
+			if(braceBalance < 0) {
+				throw std::runtime_error("Error: unexpected token '" +
+							 tokens.begin()->data +
+							 "' encountered. Line: " +
+							 std::to_string(tokens.begin()->metadata.lineEnd) + 
+							 ", Column: " + 
+							 std::to_string(tokens.begin()->metadata.columnEnd) +
+							 ".");
+			}
+		} else if(braceBalance == 0 && it->type == TokenType::SEMICOLON) {
+			return ++it;
+		}
+		it++;
 	}
-	std::string spaceName = it->data;
-	// TODO: check if namespace name is valid
-	// TODO: nested namespaces
-	it++;
-	if(it->type != TokenType::BRACE_L) {
-		throw std::runtime_error("Error: expected '{' but '" +
-						   it->data +
-						   "' encountered. Line: " +
-						   std::to_string(it->metadata.lineEnd) + 
-						   ", Column: " + 
-						   std::to_string(it->metadata.columnEnd) +
-						   ".");
-	}
-	it++;
-
-	tokens.erase(tokens.begin(), it);
-
-	auto [s, i] = listContents(tokens, space + "::" + spaceName);
-	stubs.splice(stubs.end(), s);
-	it = i;
-
-	if(it->type != TokenType::BRACE_R) {
-		throw std::runtime_error("Error: expected '}'. Line: " +
-						   std::to_string(it->metadata.lineEnd) + 
-						   ", Column: " + 
-						   std::to_string(it->metadata.columnEnd) +
-						   ".");
-	}
-
-	tokens.erase(it);
-
-	return {stubs, it};
+	return it;
 }
 
-// Something somth = expr;
-// =>
-// def somth of Something;
-// somth = expr;
-//
-// fun f(Arg1 a1, Arg2 a2) -> RetType { function body };
-// =>
-// def f of fun (Arg1, Arg2) -> RetType;
-// f = (Arg1 a1, Arg2 a2){ function body };
-//
-// class A : B { class body };
-// =>
-// def A of type;
-// A = class { class body } : B;
+UnidentifiedStub splitStub(std::list<Token>& tokens) {
+	UnidentifiedStub stub;
+	stub.tokens.splice(stub.tokens.end(), tokens, tokens.begin(), findEndOfStatement(tokens));
+	return stub;
+}
 
-std::pair<std::list<Stub>, std::list<Token>::iterator> listContents(std::list<Token>& tokens, std::string space) {
-	std::list<Stub> stubs;
+struct Namespace {
+	std::string name;
+	std::list<UnidentifiedStub> unidentifiedStubs;
+	std::map<std::string, Stub> stubs;
+	std::map<std::string, Namespace> children;
+	Namespace* parent;
 
-	for(auto it = tokens.begin(); it != tokens.end(); it++) {
-		if(it->type == TokenType::SYMBOL && it->data == "namespace") {
-			auto [s, i] = processNamespace(tokens, space);
-			stubs.splice(stubs.end(), s);
-			it = i;
-		// } else if() { TODO: other stuff
-		} else if(it->type == TokenType::SYMBOL && it->data == "def") {
+	explicit Namespace(std::string n, Namespace* p = nullptr) : name(std::move(n)), parent(p) {}
+
+	void listContents(std::list<Token>& tokens) {
+		for(auto it = tokens.begin(); it != tokens.end(); it = tokens.begin()) {
+			if(it->type == TokenType::SYMBOL && it->data == "namespace") {
+				processNamespace(tokens);
+			} else if(it->type == TokenType::END || it->type == TokenType::BRACE_R) {
+				return;
+			} else {
+				unidentifiedStubs.push_back(std::move(splitStub(tokens)));
+			}
+		}
+
+		throw std::runtime_error("No end token???");
+	}
+
+	void processNamespace(std::list<Token>& tokens) {
+		auto it = tokens.begin();
+
+		it++;
+		if(it->type != TokenType::SYMBOL) {
+			throw std::runtime_error("Error: expected namespace name but '" +
+							it->data +
+							"' encountered. Line: " +
+							std::to_string(it->metadata.lineEnd) + 
+							", Column: " + 
+							std::to_string(it->metadata.columnEnd) +
+							".");
+		}
+		std::string spaceName = it->data;
+		// TODO: check if namespace name is valid
+		// TODO: nested namespaces
+		it++;
+		if(it->type != TokenType::BRACE_L) {
+			throw std::runtime_error("Error: expected '{' but '" +
+							it->data +
+							"' encountered. Line: " +
+							std::to_string(it->metadata.lineEnd) + 
+							", Column: " + 
+							std::to_string(it->metadata.columnEnd) +
+							".");
+		}
+		it++;
+		tokens.erase(tokens.begin(), it);
+
+		auto [child, _] = children.emplace(spaceName, this);
+		child->second.listContents(tokens);
+
+		it = tokens.begin();
+		if(it->type != TokenType::BRACE_R) {
+			throw std::runtime_error("Error: expected '}'. Line: " +
+							std::to_string(it->metadata.lineEnd) + 
+							", Column: " + 
+							std::to_string(it->metadata.columnEnd) +
+							".");
+		}
+		tokens.erase(it);
+	}
+
+	void identifyTypes() {
+		for(auto it = unidentifiedStubs.begin(); it != unidentifiedStubs.end();) {
+			auto current = it++;
+			auto i = current->tokens.begin();
+			if(i->type == TokenType::SEMICOLON) {
+				unidentifiedStubs.erase(current);
+			} else if(i->type == TokenType::SYMBOL && i->data == "type") {
+				i++;
+				if(i->type != TokenType::SYMBOL) {
+					throw std::runtime_error("Error: expected typename identifier. Line: " +
+							  std::to_string(i->metadata.lineEnd) + 
+							  ", Column: " + 
+							  std::to_string(i->metadata.columnEnd) +
+							  ".");
+				}
+				// TODO: check validity of the type name (maybe)
+				auto [_, success] = stubs.emplace(i->data, std::move(current->tokens), this);
+				if(!success) {
+					throw std::runtime_error("Error: Redefinition of type symbol'" + 
+							  i->data +
+							  "'. Line: " +
+							  std::to_string(i->metadata.lineEnd) + 
+							  ", Column: " + 
+							  std::to_string(i->metadata.columnEnd) +
+							  ".");
+				}
+				unidentifiedStubs.erase(current);
+			}
 
 		}
+
+		for(auto& child : children) {
+			child.second.identifyTypes();
+		}
 	}
-}
+
+	void identifyFunctors() {
+		for(auto it = unidentifiedStubs.begin(); it != unidentifiedStubs.end();) {
+			auto current = it++;
+			auto i = current->tokens.begin();
+			if(i->type == TokenType::SEMICOLON) {
+				unidentifiedStubs.erase(current);
+			} else if(i->type == TokenType::SYMBOL && i->data == "type") {
+				i++;
+				if(i->type != TokenType::SYMBOL) {
+					throw std::runtime_error("Error: expected typename identifier. Line: " +
+							  std::to_string(i->metadata.lineEnd) + 
+							  ", Column: " + 
+							  std::to_string(i->metadata.columnEnd) +
+							  ".");
+				}
+				// TODO: check validity of the type name (maybe)
+				auto [_, success] = stubs.emplace(i->data, std::move(current->tokens), this);
+				if(!success) {
+					throw std::runtime_error("Error: Redefinition of type symbol'" + 
+							  i->data +
+							  "'. Line: " +
+							  std::to_string(i->metadata.lineEnd) + 
+							  ", Column: " + 
+							  std::to_string(i->metadata.columnEnd) +
+							  ".");
+				}
+				unidentifiedStubs.erase(current);
+			}
+
+		}
+
+		for(auto& child : children) {
+			child.second.identifyFunctors();
+		}
+	}
+};
 
 }
 
 std::vector<Stub> index(std::list<Token>& tokens) {
-	
+	Namespace global{""};
+	global.listContents(tokens);
+	if(tokens.begin()->type != TokenType::END) { 
+		throw std::runtime_error("Error: unexpected token '" +
+						   tokens.begin()->data +
+						   "' encountered. Line: " +
+						   std::to_string(tokens.begin()->metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(tokens.begin()->metadata.columnEnd) +
+						   ".");
+	}
 }
 
 }

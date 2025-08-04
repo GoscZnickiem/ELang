@@ -1,12 +1,11 @@
 #include "compilationUnit.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/indexer.hpp"
-#include "data/types.hpp"
+#include "environment.hpp"
 
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <map>
 
 namespace elc {
 
@@ -17,16 +16,23 @@ void processFile(std::ifstream& sourceFile) {
 	try{
 		tokens = lex(sourceFile);
 	} catch (std::runtime_error& e) {
-		for(auto& token : tokens) {
-			std::cout << token << "\n";
-		}
 		std::cerr << "\033[1;31m================\n";
 		std::cerr << "Lexing error:\033[0m\n";
 		std::cerr << e.what() << "\n";
 		return;
 	}
 
-	auto stubs = index(tokens);
+	std::vector<Stub> stubs;
+	try {
+		stubs = index(tokens);
+	} catch (std::runtime_error& e) {
+		std::cerr << "\033[1;31m================\n";
+		std::cerr << "Indexing error:\033[0m\n";
+		std::cerr << e.what() << "\n";
+		return;
+	}
+
+
 }
 
 }

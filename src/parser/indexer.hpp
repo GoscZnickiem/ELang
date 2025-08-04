@@ -9,11 +9,6 @@
 
 namespace elc {
 
-struct Stub {
-	std::string name;
-	std::list<Token> tokens;
-};
-
 [[nodiscard]] std::vector<Stub> index(std::list<Token>& tokens);
 
 }

@@ -231,3 +231,29 @@ fun main() -> int {
 	Optional<int> i = 5; 
 	return *i;
 };
+
+
+
+form AFewInts = int | int, AFewInts;
+
+implicit functor addInts<form AFewInts Args> -> 
+	fun(Args args) -> int {
+		match form args {
+			int x, AFewInts rest -> { return x + addInts(rest); };
+			int x -> { return x; };
+		};
+	};
+
+
+
+form InfiniteInts = int, InfiniteInts;
+
+fun(InfiniteInts args) {
+	// whatever you do here it won't compile
+};
+
+implicit functor addInfinite<form InfiniteInts Args> ->
+	fun(Args args) {
+		// whatever you do here it doesn't matter because the functor will never be called anyway
+	};
+

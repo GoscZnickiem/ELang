@@ -94,18 +94,6 @@ using Return = std::unique_ptr<ReturnC>;
 using Block = std::unique_ptr<BlockC>;
 using VarDecl = std::unique_ptr<VarDeclC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
-// Kinds
-// struct KindDeclC;
-// using KindDecl = std::unique_ptr<KindDeclC>;
-// struct KindValDeclC;
-// using KindValDecl = std::unique_ptr<KindValDeclC>;
-// struct FunctorDeclC;
-// using FunctorDecl = std::unique_ptr<FunctorDeclC>;
-// struct FunctorCallC;
-// using FunctorCall = std::unique_ptr<FunctorCallC>;
-// Types
-// struct TypeDeclC;
-// using TypeDecl = std::unique_ptr<TypeDeclC>;
 
 // ========================================================== //
 //                      Basic structures
@@ -235,24 +223,6 @@ struct FunDeclC : public Item {
 	Block body;
 	[[nodiscard]] std::string toString() const final;
 };
-
-// Kinds:
-
-// struct KindDeclC : public Tomasz {
-// 	explicit KindDeclC(Identifier&& n, Kind&& k);
-// 	Identifier name;
-// 	Kind value;
-// 	[[nodiscard]] std::string toString() const final;
-// };
-//
-// struct KindValDeclC : public Tomasz {
-// 	explicit KindValDeclC(Kind&& k, Identifier&& n, );
-// 	Identifier name;
-// 	Kind value;
-// 	[[nodiscard]] std::string toString() const final;
-// };
-
-// Types
 
 }
 
