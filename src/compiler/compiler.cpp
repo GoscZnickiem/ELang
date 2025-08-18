@@ -77,7 +77,7 @@ public:
 	[[nodiscard]] llvm::Value* compileExpression(const ast::Expression& expr) const {
 		llvm::Value* result = nullptr;
 		std::visit(visitor{
-			[&](const ast::Numeral& num) {
+			[&](const ast::Integral& num) {
 				// TODO: type?
 				result = builder->getInt32(num->getI32());
 			},

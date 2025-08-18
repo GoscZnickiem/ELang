@@ -1,6 +1,7 @@
 #include "compilationUnit.hpp"
+#include "data/ast.hpp"
 #include "lexer/lexer.hpp"
-#include "parser/indexer.hpp"
+#include "parser/parser.hpp"
 #include "environment.hpp"
 
 #include <fstream>
@@ -22,12 +23,12 @@ void processFile(std::ifstream& sourceFile) {
 		return;
 	}
 
-	std::vector<Stub> stubs;
+	std::vector<ast::Declaration> declarations;
 	try {
-		stubs = index(tokens);
+		declarations = parse(tokens);
 	} catch (std::runtime_error& e) {
 		std::cerr << "\033[1;31m================\n";
-		std::cerr << "Indexing error:\033[0m\n";
+		std::cerr << "Parsing error:\033[0m\n";
 		std::cerr << e.what() << "\n";
 		return;
 	}

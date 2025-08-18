@@ -1,70 +1,17 @@
 #ifndef _ELC_DATA_AST_
 #define _ELC_DATA_AST_
 
-#include "tokens.hpp"
 #include "help/visitor.hpp"
+#include "help/variant.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
-#include <variant>
 #include <vector>
 
 namespace elc::ast {
-
-std::pair<int, bool> getBiOperatorData(TokenType token);
-std::pair<int, int> getUOperatorData(TokenType token);
-
-template<typename T>
-concept stdvariant = requires(T a) {
-	typename std::variant_size<T>::type;
-};
-
-template<stdvariant Var1, stdvariant Var2>
-struct flatVariantBase2;
-template<typename...T, typename...U>
-struct flatVariantBase2<std::variant<T...>, std::variant<U...>> {
-	using type = std::variant<T..., U...>;
-};
-
-template<typename...Vars>
-struct flatVariantBase;
-template<stdvariant V, typename...Vars>
-struct flatVariantBase<V, Vars...>{
-	using type = typename flatVariantBase<typename flatVariantBase2<V, typename flatVariantBase<Vars...>::type>::type>::type;
-};
-template<typename T, typename...Vars>
-struct flatVariantBase<T, Vars...>{
-	using type = typename flatVariantBase<std::variant<T>, Vars...>::type;
-};
-template<stdvariant V>
-struct flatVariantBase<V>{
-	using type = V;
-};
-template<typename T>
-struct flatVariantBase<T>{
-	using type = std::variant<T>;
-};
-
-template<typename...T>
-using variant = flatVariantBase<T...>::type;
-
-template <typename T, typename Variant>
-struct matchesVariantT;
-
-template <typename T, typename... Types>
-struct matchesVariantT<T, std::variant<Types...>> 
-	: std::disjunction<std::is_same<T, Types>...> {};
-
-template <typename VariantSubset, typename T>
-std::optional<VariantSubset> matchesVariant(const T& value) {
-	if constexpr (matchesVariantT<T, VariantSubset>::value) {
-		return VariantSubset{value};
-	} else {
-		return std::nullopt;
-	}
-}
 
 // ========================================================== //
 //              Atomic types forward declarations
@@ -80,35 +27,61 @@ struct Item {
 	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
-// Atomic expressions
-struct NumeralC; struct BoolC; struct IdentifierC; struct ULeftOperatorC; struct BiOperatorC; struct FunCallC;
-using Numeral = std::unique_ptr<NumeralC>;
-using Bool = std::unique_ptr<BoolC>;
-using Identifier = std::unique_ptr<IdentifierC>;
-using ULeftOperator = std::unique_ptr<ULeftOperatorC>;
-using BiOperator = std::unique_ptr<BiOperatorC>;
+// Expressions
+struct IntegralC; struct FunCallC;
+using Integral = std::unique_ptr<IntegralC>;
 using FunCall = std::unique_ptr<FunCallC>;
-// Atomic statements
-struct ReturnC; struct BlockC; struct VarDeclC; struct FunDeclC;
+// Statements
+struct ReturnC; struct BlockC;
 using Return = std::unique_ptr<ReturnC>;
 using Block = std::unique_ptr<BlockC>;
+// Declarations
+struct DeclarationC;
+struct VarDeclC; struct FunDeclC; struct OpDeclC; struct FunctorDeclC; struct FunctorOpDeclC;
+struct TypeDeclC; struct AssocDeclC; struct FieldDeclC;
+using Declaration = std::unique_ptr<DeclarationC>;
 using VarDecl = std::unique_ptr<VarDeclC>;
 using FunDecl = std::unique_ptr<FunDeclC>;
+using OpDecl = std::unique_ptr<OpDeclC>;
+using FunctorDecl = std::unique_ptr<FunctorDeclC>;
+using FunctorOpDecl = std::unique_ptr<FunctorOpDeclC>;
+using TypeDecl = std::unique_ptr<TypeDeclC>;
+using AssocDecl = std::unique_ptr<AssocDeclC>;
+using FieldDecl = std::unique_ptr<FieldDeclC>;
+// Types
+struct StructTypeC; struct ArrayTypeC; struct PointerTypeC; struct FunctionTypeC;
+struct ModifierSectionC; struct FieldConstructorC;
+using StructType = std::unique_ptr<StructTypeC>;
+using ArrayType = std::unique_ptr<ArrayTypeC>;
+using PointerType = std::unique_ptr<PointerTypeC>;
+using FunctionType = std::unique_ptr<FunctionTypeC>;
+using ModifierSection = std::unique_ptr<ModifierSectionC>; 
+using FieldConstructor = std::unique_ptr<FieldConstructorC>; 
+// Whatever the fuck this is
+struct FunctionPackC; struct FunctionFormC;
+using FunctionPack = std::unique_ptr<FunctionPackC>;
+using FunctionForm = std::unique_ptr<FunctionFormC>;
+
+struct CommaC; struct DisjunctionC;
+using Comma = std::unique_ptr<CommaC>;
+using Disjunction = std::unique_ptr<DisjunctionC>;
+struct FunctorKindC;
+using FunctorKind = std::unique_ptr<FunctorKindC>;
+// Other
+struct IdentifierC; struct FunctorCallC;
+using Identifier = std::unique_ptr<IdentifierC>;
+using FunctorCall = std::unique_ptr<FunctorCallC>;
 
 // ========================================================== //
 //                      Basic structures
 // ========================================================== //
 
 using Expression = variant<
-	Numeral, Bool, Identifier, ULeftOperator, BiOperator, FunCall
+	Integral, Identifier, FunCall, FunctorCall
 >;
 
-// using MetaDeclaration = variant<
-//	FunctorDecl
-// >;
-
-using Declaration = variant<
-	VarDecl, FunDecl
+using Declarator = variant<
+	VarDecl, FunDecl, OpDecl, FunctorDecl, FunctorOpDecl, TypeDecl, AssocDecl, FieldDecl
 >;
 
 using Statement = variant<
@@ -116,19 +89,24 @@ using Statement = variant<
 >;
 
 using Instruction = variant<
-	Statement, Declaration //, MetaDeclaration
->;
-
-using Kind = variant<
-	Identifier 
+	Statement, Declaration
 >;
 
 using Type = variant<
-	Identifier 
+	Identifier, StructType, ArrayType, PointerType, FunctionType, FunctorCall
 >;
 
-using ArgumentList = std::vector<Expression>;
-using ArgumentDeclList = std::vector<std::pair<Type, Identifier>>;
+using Value = variant<
+	Expression, Identifier, Type, FunctorCall
+>;
+
+using Kind = variant<
+	Identifier, Type, FunctorKind, FunctorCall
+>;
+
+using Archetype = variant<
+	Kind, Comma, Disjunction
+>;
 
 template<stdvariant V>
 std::string astToString(const V& arg) {
@@ -145,51 +123,22 @@ std::string astToString(const V& arg) {
 
 // Expressions:
 
-struct NumeralC : public Item {
-	explicit NumeralC(std::string v);
+struct IntegralC : public Item {
+	explicit IntegralC(std::string v);
 	std::string value;
 	[[nodiscard]] std::string toString() const final;
 	[[nodiscard]] uint32_t getI32() const;
 };
 
-struct BoolC : public Item {
-	explicit BoolC(bool v);
-	bool value;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct IdentifierC : public Item {
-	explicit IdentifierC(std::string n);
-	std::string name;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct ULeftOperatorC : public Item {
-	ULeftOperatorC(Expression&& e, std::string o);
-	ULeftOperatorC(Expression& e, std::string o);
-	Expression expr;
-	std::string op;
-	[[nodiscard]] std::string toString() const final;
-};
-
-struct BiOperatorC : public Item {
-	BiOperatorC(Expression&& l, Expression&& r, std::string o);
-	BiOperatorC(Expression& l, Expression& r, std::string o);
-	Expression left;
-	Expression right;
-	std::string op;
-	[[nodiscard]] std::string toString() const final;
-};
-
 struct FunCallC : public Item {
-	FunCallC(Identifier&& n, ArgumentList&& args);
-	FunCallC(Identifier& n, ArgumentList& args);
+	FunCallC(Identifier&& n, FunctionPack&& args);
+	FunCallC(Identifier& n, FunctionPack& args);
 	Identifier name;
-	ArgumentList arguments;
+	FunctionPack arguments;
 	[[nodiscard]] std::string toString() const final;
 };
 
-// Instructions:
+// Statements:
 
 struct ReturnC : public Item {
 	explicit ReturnC(Expression&& e);
@@ -205,6 +154,15 @@ struct BlockC : public Item {
 	[[nodiscard]] std::string toString() const final;
 };
 
+// Declarations
+
+struct DeclarationC : public Item {
+	DeclarationC(Declarator&& d, std::vector<Identifier>&& m);
+	DeclarationC(Declarator& d, std::vector<Identifier>& m);
+	Declarator decl;
+	std::vector<Identifier> modifiers;
+};
+
 struct VarDeclC : public Item {
 	VarDeclC(Type&& t, Identifier&& n);
 	VarDeclC(Type& t, Identifier& n);
@@ -215,12 +173,108 @@ struct VarDeclC : public Item {
 };
 
 struct FunDeclC : public Item {
-	FunDeclC(Identifier&& n, Type&& t, ArgumentDeclList&& args, Block&& b);
-	FunDeclC(Identifier& n, Type& t, ArgumentDeclList& args, Block& b);
+	FunDeclC(Identifier&& n, Type&& t, FunctionForm&& args, Block&& b);
+	FunDeclC(Identifier& n, Type& t, FunctionForm& args, Block& b);
 	Identifier name;
 	Type returnType;
-	ArgumentDeclList arguments;
+	FunctionForm arguments;
 	Block body;
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct OpDeclC : public Item {
+	OpDeclC(Identifier&& n, Type&& t, FunctionForm&& args, Block&& b);
+	OpDeclC(Identifier& n, Type& t, FunctionForm& args, Block& b);
+	Identifier name;
+	Type returnType;
+	FunctionForm arguments;
+	Block body;
+	[[nodiscard]] std::string toString() const final;
+};
+
+// struct FunctorDeclC : public Item {
+// 	FunctorDeclC(Identifier&& n, Type&& t, FunctionForm&& args, Block&& b);
+// 	FunctorDeclC(Identifier& n, Type& t, FunctionForm& args, Block& b);
+// 	Identifier name;
+// 	Kind resultKind; 
+// 	FunctorForm arguments;
+// };
+
+// struct FunctorOpDeclC : public Item {
+
+struct TypeDeclC : public Item {
+	TypeDeclC(Identifier&& n, Type&& t);
+	TypeDeclC(Identifier& n, Type& t);
+	Identifier name;
+	Type value;
+	[[nodiscard]] std::string toString() const final;
+};
+
+struct AssocDeclC : public Item {
+	explicit AssocDeclC(Identifier&& n);
+	explicit AssocDeclC(Identifier& n);
+	AssocDeclC& withSide(Identifier&& v);
+	AssocDeclC& withSide(Identifier& v);
+	AssocDeclC& withAbove(std::vector<Identifier>&& v);
+	AssocDeclC& withAbove(std::vector<Identifier>& v);
+	AssocDeclC& withBelow(std::vector<Identifier>&& v);
+	AssocDeclC& withBelow(std::vector<Identifier>& v);
+	Identifier name;
+	std::optional<Identifier> side;
+	std::optional<std::vector<Identifier>> above;
+	std::optional<std::vector<Identifier>> below;
+};
+
+struct FieldDeclC : public Item {
+	FieldDeclC(Identifier&& n, FieldConstructor&& v);
+	FieldDeclC(Identifier& n, FieldConstructor& v);
+	Identifier name;
+	FieldConstructor value;
+};
+
+// Types
+
+struct StructTypeC : public Item {
+	std::vector<variant<ModifierSection, FieldConstructor>> fields;
+	std::string currentModifier;
+};
+
+struct ArrayTypeC : public Item {
+	ArrayTypeC(Type&& t, std::size_t s);
+	ArrayTypeC(Type& t, std::size_t s);
+	Type type;
+	std::size_t size;
+};
+
+struct PointerTypeC : public Item {
+	explicit PointerTypeC(Type&& t);
+	explicit PointerTypeC(Type& t);
+	Type type;
+}; 
+
+struct FunctionTypeC : public Item {
+	FunctionTypeC(Type&& t, FunctionForm&& a);
+	FunctionTypeC(Type& t, FunctionForm& a);
+	Type returnType;
+	FunctionForm arguments;
+};
+
+struct ModifierSectionC : public Item {
+	explicit ModifierSectionC(Identifier&& n);
+	explicit ModifierSectionC(Identifier& n);
+	Identifier name;
+};
+
+struct FieldConstructorC : public Item {
+	explicit FieldConstructorC(Type&& t);
+	explicit FieldConstructorC(Type& t);
+}; 
+
+// Other
+
+struct IdentifierC : public Item {
+	explicit IdentifierC(std::string n);
+	std::string name;
 	[[nodiscard]] std::string toString() const final;
 };
 

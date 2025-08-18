@@ -28,8 +28,7 @@ constexpr int typeOrderHelp(const CompiledType& t) {
 		[&](const Pointer&)		{ return 1; },
 		[&](const Struct&)		{ return 2; },
 		[&](const Array&)		{ return 3; },
-		[&](const Union&)		{ return 4; },
-		[&](const Function&)	{ return 5; }
+		[&](const Function&)	{ return 4; }
 	}, t);
 }
 
@@ -53,14 +52,6 @@ constexpr bool arrayTypeCompare(const Array& a, const Array& b) {
 	if(compiledTypesOrder(a->element, b->element)) return true;
 	if(compiledTypesOrder(b->element, a->element)) return false;
 	return a->size < b->size;
-};
-constexpr bool unionTypeCompare(const Union& a, const Union& b) {
-	if(a->members.size() != b->members.size()) return a->members.size() < b->members.size();
-	for(std::size_t i = 0; i < a->members.size(); i++) {
-		if(compiledTypesOrder(a->members[i], b->members[i])) return true;
-		if(compiledTypesOrder(b->members[i], a->members[i])) return false;
-	}
-	return a->name < b->name;
 };
 constexpr bool functionTypeCompare(const Function& a, const Function& b) {
 	if(compiledTypesOrder(a->returnType, b->returnType)) return true;
@@ -92,9 +83,6 @@ bool compiledTypesOrder(const CompiledType& a, const CompiledType& b) {
 		},
 		[&](const Array& a, const Array& b) {
 			return arrayTypeCompare(a, b);
-		},
-		[&](const Union& a, const Union& b) {
-			return unionTypeCompare(a, b);
 		},
 		[&](const Function& a, const Function& b) {
 			return functionTypeCompare(a, b);

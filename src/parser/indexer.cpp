@@ -156,22 +156,21 @@ struct Namespace {
 		}
 	}
 
+	void createSymbol(std::string& symbol, std::string& );
+
 	void identifyFunctors() {
 		for(auto it = unidentifiedStubs.begin(); it != unidentifiedStubs.end();) {
 			auto current = it++;
 			auto i = current->tokens.begin();
-			if(i->type == TokenType::SEMICOLON) {
-				unidentifiedStubs.erase(current);
-			} else if(i->type == TokenType::SYMBOL && i->data == "type") {
+			if(i->type == TokenType::SYMBOL && i->data == "functor") {
 				i++;
 				if(i->type != TokenType::SYMBOL) {
-					throw std::runtime_error("Error: expected typename identifier. Line: " +
+					throw std::runtime_error("Error: expected functor identifier. Line: " +
 							  std::to_string(i->metadata.lineEnd) + 
 							  ", Column: " + 
 							  std::to_string(i->metadata.columnEnd) +
 							  ".");
 				}
-				// TODO: check validity of the type name (maybe)
 				auto [_, success] = stubs.emplace(i->data, std::move(current->tokens), this);
 				if(!success) {
 					throw std::runtime_error("Error: Redefinition of type symbol'" + 

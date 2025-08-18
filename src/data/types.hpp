@@ -13,12 +13,11 @@ namespace elc::type {
 struct IntegralC; struct StructC; struct UnionC; struct ArrayC; struct PointerC; struct FunctionC;
 using Integral = std::unique_ptr<IntegralC>;
 using Struct = std::unique_ptr<StructC>;
-using Union = std::unique_ptr<UnionC>;
 using Array = std::unique_ptr<ArrayC>;
 using Pointer = std::unique_ptr<PointerC>;
 using Function = std::unique_ptr<FunctionC>;
 
-using CompiledType = std::variant<Integral, Pointer, Struct, Array, Union, Function>;
+using CompiledType = std::variant<Integral, Pointer, Struct, Array, Function>;
 
 enum struct IntegralType {
 	Int8, Int16, Int32, Int64,
@@ -32,11 +31,6 @@ struct IntegralC {
 };
 
 struct StructC {
-	std::string name;
-	std::vector<CompiledType> members;
-};
-
-struct UnionC {
 	std::string name;
 	std::vector<CompiledType> members;
 };
