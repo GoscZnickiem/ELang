@@ -1,10 +1,13 @@
 #include "parser.hpp"
 
 #include "data/ast.hpp"
+#include "data/astBuilding.hpp"
 #include "data/tokens.hpp"
 #include "help/visitor.hpp"
 
 #include <cstddef>
+#include <iterator>
+#include <list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -14,8 +17,143 @@
 #include <stdexcept>
 
 namespace elc {
+using ast::build::Context;
 
+namespace {
 
+std::list<Token>::iterator findRightBrace(std::list<Token>::iterator it) {
+	for(std::size_t braceBalance = 0; true; it++) {
+		if(it->type == TokenType::END) {
+			throw std::runtime_error("Error: expected '}'. Line: " +
+							std::to_string(it->metadata.lineEnd) + 
+							", Column: " + 
+							std::to_string(it->metadata.columnEnd) +
+							".");
+		}
+		if(it->type == TokenType::BRACE_L) {
+			braceBalance++;
+		} else if(it->type == TokenType::BRACE_R) {
+			braceBalance--;
+			if(braceBalance == 0) {
+				return ++it;
+			}
+			if(braceBalance < 0) {
+				throw std::runtime_error("Error: unexpected '}' encountered. Line: " +
+							 std::to_string(it->metadata.lineEnd) + 
+							 ", Column: " + 
+							 std::to_string(it->metadata.columnEnd) +
+							 ".");
+			}
+		}
+	}
+}
+
+std::list<Token>::iterator findEndOfNamespace(std::list<Token>& tokens) {
+	auto it = tokens.begin();
+	return findRightBrace(it);
+}
+
+std::list<Token>::iterator findEndOfDeclaration(std::list<Token>& tokens) {
+	auto it = tokens.begin();
+	while(it->type != TokenType::SEMICOLON) {
+		if(it->type == TokenType::BRACE_L) {
+			it = findRightBrace(it);
+		} else {
+			it++;
+		}
+	}
+	return ++it;
+}
+
+ast::build::Stub splitStub(std::list<Token>& tokens) {
+	ast::build::Stub stub;
+	if(tokens.front().type == TokenType::SYMBOL && tokens.front().data == "namespace") {
+		stub.tokens.splice(stub.tokens.end(), tokens, tokens.begin(), findEndOfNamespace(tokens));
+	} else {
+		stub.tokens.splice(stub.tokens.end(), tokens, tokens.begin(), findEndOfDeclaration(tokens));
+	}
+	return stub;
+}
+
+ast::build::Namespace* stubToNamespace(ast::build::Stub& stub, Context& context) {
+	auto ns = std::make_unique<ast::build::Namespace>();
+	ns->parent = context.currentNamespace;
+	auto it = stub.tokens.begin();
+
+	if(it->type != TokenType::SYMBOL || it->data != "namespace") {
+		throw std::runtime_error("whar?");
+	}
+	it++;
+	if(it->type != TokenType::SYMBOL) {
+		// TODO: allow nameless namespaces
+		throw std::runtime_error("Error: Expected namespace name. Line: " +
+						   std::to_string(it->metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(it->metadata.columnEnd) +
+						   ".");
+	}
+	// TODO: check namespace name validity
+	ns->name = ns->parent->name + "::" + it->data;
+
+	it++;
+	if(it->type != TokenType::BRACE_L) {
+		throw std::runtime_error("Error: expected '{' but '" +
+						   it->data +
+						   "' encountered. Line: " +
+						   std::to_string(it->metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(it->metadata.columnEnd) +
+						   ".");
+	}
+	it++;
+
+	ns->tokens.splice(ns->tokens.begin(), stub.tokens, it, std::prev(stub.tokens.end()));
+
+	auto* ptr = ns.get();
+	context.namedStubs["#ns" + ns->name] = std::move(ns);
+
+	return ptr;
+}
+
+void identifyNamespaceContents(ast::build::Namespace& space, Context& context) {
+	auto& tokens = space.tokens;
+	while(!tokens.empty()) {
+		auto stub = splitStub(tokens);
+		auto it = stub.tokens.begin();
+		if(it->type != TokenType::SYMBOL) {
+			throw std::runtime_error("Error: something but '" +
+							it->data +
+							"' encountered. Line: " +
+							std::to_string(it->metadata.lineEnd) + 
+							", Column: " + 
+							std::to_string(it->metadata.columnEnd) +
+							".");
+		}
+		if(it->data == "namespace") {
+			auto* ns = stubToNamespace(stub, context);
+			auto* prevNs = context.currentNamespace;
+			context.currentNamespace = ns;
+			identifyNamespaceContents(*ns, context);
+			context.currentNamespace = prevNs;
+		} else if(it->data == "fun") {
+
+		}
+	}
+}
+
+}
+
+std::vector<ast::Declaration> parse(std::list<Token>& tokens) {
+	Context context;
+
+	auto global = std::make_unique<ast::build::Namespace>();
+	global->name = "";
+	global->tokens = std::move(tokens);
+	context.currentNamespace = global.get();
+	identifyNamespaceContents(*global, context);
+
+	context.namedStubs["ns#"] = std::move(global);
+}
 
 // Parser::Parser(CompilationUnit* parent) : root(parent) { }
 //
@@ -248,4 +386,4 @@ namespace elc {
 // 	return parser.parse();
 // }
 
-}
+} // namespace elc
