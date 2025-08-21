@@ -2,9 +2,11 @@
 #define _ELC_DATA_ASTBUILDING_
 
 #include "data/tokens.hpp"
+#include "data/types.hpp"
 #include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -15,23 +17,36 @@ struct Node {
 	std::vector<Node*> dependenceIn;
 };
 
+using NodePtr = std::unique_ptr<Node>;
+
 struct Namespace;
 
-struct Context {
-	std::list<std::unique_ptr<ast::build::Node>> unnamedStubs;
-	std::map<std::string, std::unique_ptr<ast::build::Node>> namedStubs;
-	Namespace* currentNamespace;
+struct Priority {
+	bool operator()(const NodePtr& a, const NodePtr& b) const;
 };
 
-struct Namespace : public Node {
-	std::string name;
-	Namespace* parent;
-	std::list<Token> tokens;
+struct Context {
+	std::priority_queue<NodePtr, std::vector<NodePtr>, Priority> unresolvedStubs;
+	std::map<std::string, NodePtr> symbols;
+	Namespace* currentNamespace;
 };
 
 struct Stub : public Node {
 	std::list<Token> tokens;
 	Namespace* parent;
+};
+
+struct Namespace : public Stub {
+	std::string name;
+};
+
+struct Function : public Stub {
+	std::string name;
+	type::Function type;
+};
+
+struct VarDecl : public Stub {
+	std::string name;
 };
 
 }

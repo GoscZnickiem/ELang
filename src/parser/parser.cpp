@@ -110,9 +110,56 @@ ast::build::Namespace* stubToNamespace(ast::build::Stub& stub, Context& context)
 	ns->tokens.splice(ns->tokens.begin(), stub.tokens, it, std::prev(stub.tokens.end()));
 
 	auto* ptr = ns.get();
-	context.namedStubs["#ns" + ns->name] = std::move(ns);
+	context.symbols["#ns" + ns->name] = std::move(ns);
+	// TODO: add to symbol map
 
 	return ptr;
+}
+
+ast::build::Function* stubToFunction(ast::build::Stub& stub, Context& context) {
+	auto f = std::make_unique<ast::build::Function>();
+	f->parent = context.currentNamespace;
+	auto it = stub.tokens.begin();
+
+	if(it->type != TokenType::SYMBOL || it->data != "fun") {
+		throw std::runtime_error("whar?");
+	}
+	it++;
+
+	if(it->type != TokenType::SYMBOL) {
+		throw std::runtime_error("Error: Expected identifier name. Line: " +
+						   std::to_string(it->metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(it->metadata.columnEnd) +
+						   ".");
+	}
+	// TODO: check name validity
+	f->name = it->data;
+
+	it++;
+	f->tokens.splice(f->tokens.begin(), stub.tokens, it, std::prev(stub.tokens.end()));
+
+	auto* ptr = f.get();
+	context.unresolvedStubs.push(std::move(f));
+	// TODO: add to symbol map
+
+	return ptr;
+}
+
+void stubToDecl(ast::build::Stub& stub, Context& context) {
+	auto it = stub.tokens.begin();
+	if(it->type != TokenType::SYMBOL && it->data == "fun") {
+		auto* f = stubToFunction(stub, context);
+	} else if(it->type != TokenType::SYMBOL && it->data == "type") {
+		throw std::runtime_error("Error: Type declarations not yet supported.");
+	} else if(it->type != TokenType::SYMBOL && it->data == "functor") {
+		throw std::runtime_error("Error: Functor declarations not yet supported.");
+	} else {
+		auto var = std::make_unique<ast::build::VarDecl>();
+		var->parent = context.currentNamespace;
+		var->tokens = std::move(stub.tokens);
+		context.unresolvedStubs.push(std::move(var));
+	}
 }
 
 void identifyNamespaceContents(ast::build::Namespace& space, Context& context) {
@@ -120,23 +167,14 @@ void identifyNamespaceContents(ast::build::Namespace& space, Context& context) {
 	while(!tokens.empty()) {
 		auto stub = splitStub(tokens);
 		auto it = stub.tokens.begin();
-		if(it->type != TokenType::SYMBOL) {
-			throw std::runtime_error("Error: something but '" +
-							it->data +
-							"' encountered. Line: " +
-							std::to_string(it->metadata.lineEnd) + 
-							", Column: " + 
-							std::to_string(it->metadata.columnEnd) +
-							".");
-		}
-		if(it->data == "namespace") {
+		if(it->type != TokenType::SYMBOL && it->data == "namespace") {
 			auto* ns = stubToNamespace(stub, context);
 			auto* prevNs = context.currentNamespace;
 			context.currentNamespace = ns;
 			identifyNamespaceContents(*ns, context);
 			context.currentNamespace = prevNs;
-		} else if(it->data == "fun") {
-
+		} else {
+			stubToDecl(stub, context);
 		}
 	}
 }
@@ -150,9 +188,13 @@ std::vector<ast::Declaration> parse(std::list<Token>& tokens) {
 	global->name = "";
 	global->tokens = std::move(tokens);
 	context.currentNamespace = global.get();
+	context.symbols["ns#"] = std::move(global);
 	identifyNamespaceContents(*global, context);
 
-	context.namedStubs["ns#"] = std::move(global);
+	ast::build::NodePtr node;
+	while(!context.unresolvedStubs.empty() && context.unresolvedStubs.top()->dependencies.size() == 0) {
+
+	}
 }
 
 // Parser::Parser(CompilationUnit* parent) : root(parent) { }
