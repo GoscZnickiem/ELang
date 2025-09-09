@@ -1,6 +1,7 @@
 #ifndef _ELC_HELP_VARIANT_
 #define _ELC_HELP_VARIANT_
 
+#include "help/visitor.hpp"
 #include <type_traits>
 #include <variant>
 #include <optional>
@@ -50,10 +51,9 @@ struct variantImpl<T>{
 template<typename...T>
 using variant = variantImpl<T...>::type;
 
-template <typename T, typename Variant>
+template<typename T, typename Variant>
 struct matchesVariantT;
-
-template <typename T, typename... Types>
+template<typename T, typename... Types>
 struct matchesVariantT<T, std::variant<Types...>> 
 	: std::disjunction<std::is_same<T, Types>...> {};
 

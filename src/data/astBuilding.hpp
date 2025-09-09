@@ -2,51 +2,84 @@
 #define _ELC_DATA_ASTBUILDING_
 
 #include "data/tokens.hpp"
-#include "data/types.hpp"
+#include "help/graph.hpp"
+#include "help/variant.hpp"
+#include <cstddef>
 #include <list>
 #include <map>
-#include <memory>
-#include <queue>
 #include <string>
 #include <vector>
 
 namespace elc::ast::build {
 
+struct Node;
+
+struct NodeCompare {
+	bool operator()(const Node& a, const Node& b) const;
+};
+
 struct Node {
 	std::vector<Node*> dependencies;
 	std::vector<Node*> dependenceIn;
+	Graph<Node*, NodeCompare>* graphNode;
+	std::size_t priority;
 };
-
-using NodePtr = std::unique_ptr<Node>;
 
 struct Namespace;
 
-struct Priority {
-	bool operator()(const NodePtr& a, const NodePtr& b) const;
-};
-
-struct Context {
-	std::priority_queue<NodePtr, std::vector<NodePtr>, Priority> unresolvedStubs;
-	std::map<std::string, NodePtr> symbols;
-	Namespace* currentNamespace;
-};
-
-struct Stub : public Node {
+struct CodeNode : public Node {
 	std::list<Token> tokens;
 	Namespace* parent;
 };
 
-struct Namespace : public Stub {
+struct Namespace : public CodeNode {
 	std::string name;
 };
 
-struct Function : public Stub {
+
+
+struct Function : public CodeNode {
 	std::string name;
-	type::Function type;
 };
 
-struct VarDecl : public Stub {
+struct VarDecl : public CodeNode {
 	std::string name;
+};
+
+using Stub = variant<
+	Namespace, Function, VarDecl
+>;
+
+struct Priority {
+	bool operator()(const Stub* a, const Stub* b) const;
+};
+
+enum class SymbolClass {
+	ANY, VALUE, FUNCTION, TYPE, PRECEDENCE,
+	NAMESPACE
+};
+
+struct PrecedenceLevel {
+
+};
+
+struct OperatorParsingData {
+
+};
+
+struct SymbolParsingData {
+	std::string name;
+	ast::build::SymbolClass symbolClass;
+
+};
+
+struct Context {
+	std::map<std::string, Stub> symbols;
+	std::map<std::string, SymbolClass> symbolClass;
+	Graph<Node*, NodeCompare> nodes;
+	Namespace* currentNamespace;
+
+	void setSymbolClass(std::string& s, SymbolClass c);
 };
 
 }

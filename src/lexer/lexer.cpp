@@ -57,10 +57,6 @@ void stateInit(std::list<Token>& tokens, State& state, std::string& buffer, Toke
 		emit(tokens, TokenType::BRACE_L, meta);
 	} else if(c == '}') {
 		emit(tokens, TokenType::BRACE_R, meta);
-	} else if(c == '(') {
-		emit(tokens, TokenType::PAREN_L, meta);
-	} else if(c == ')') {
-		emit(tokens, TokenType::PAREN_R, meta);
 	} else if(std::ispunct(c) != 0) {
 		buffer += c;
 		state = State::SYMBOL;
