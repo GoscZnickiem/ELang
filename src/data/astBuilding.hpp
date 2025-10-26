@@ -1,85 +1,61 @@
 #ifndef _ELC_DATA_ASTBUILDING_
 #define _ELC_DATA_ASTBUILDING_
 
-#include "data/tokens.hpp"
-#include "help/graph.hpp"
-#include "help/variant.hpp"
-#include <cstddef>
-#include <list>
-#include <map>
+#include "symbols.hpp"
+#include <coroutine>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace elc::ast::build {
 
-struct Node;
+struct VirtualSymbol;
 
-struct NodeCompare {
-	bool operator()(const Node& a, const Node& b) const;
+using Context = std::unordered_map<std::string, VirtualSymbol>;
+
+struct SymbolBuilder {
+	struct promise_type {
+		struct final_awaiter {
+			[[nodiscard]] bool await_ready() const noexcept;
+			void await_suspend(std::coroutine_handle<promise_type> h) const noexcept;
+			void await_resume() const noexcept;
+		};
+
+		SymbolBuilder get_return_object() noexcept;
+
+		std::suspend_never initial_suspend() noexcept;
+		final_awaiter final_suspend() noexcept;
+
+		void return_void() noexcept;
+		void unhandled_exception();
+	};
+
+	std::coroutine_handle<promise_type> handle;
+
+	explicit SymbolBuilder(std::coroutine_handle<promise_type> h);
+	SymbolBuilder(SymbolBuilder&& other) noexcept;
+	SymbolBuilder& operator=(SymbolBuilder&& other) noexcept;
+	SymbolBuilder(const SymbolBuilder&);
+	SymbolBuilder& operator=(const SymbolBuilder&);
+	~SymbolBuilder() = default;
+
+	static thread_local Context context;
 };
 
-struct Node {
-	std::vector<Node*> dependencies;
-	std::vector<Node*> dependenceIn;
-	Graph<Node*, NodeCompare>* graphNode;
-	std::size_t priority;
+struct VirtualSymbol {
+	std::optional<SymbolBuilder> builder;
+	std::vector<std::coroutine_handle<>> waiters;
+
+	std::optional<Symbol> symbol;
 };
 
-struct Namespace;
+struct VirtualSymbolAwait {
+    VirtualSymbol* symbol;
 
-struct CodeNode : public Node {
-	std::list<Token> tokens;
-	Namespace* parent;
-};
-
-struct Namespace : public CodeNode {
-	std::string name;
-};
-
-
-
-struct Function : public CodeNode {
-	std::string name;
-};
-
-struct VarDecl : public CodeNode {
-	std::string name;
-};
-
-using Stub = variant<
-	Namespace, Function, VarDecl
->;
-
-struct Priority {
-	bool operator()(const Stub* a, const Stub* b) const;
-};
-
-enum class SymbolClass {
-	ANY, VALUE, FUNCTION, TYPE, PRECEDENCE,
-	NAMESPACE
-};
-
-struct PrecedenceLevel {
-
-};
-
-struct OperatorParsingData {
-
-};
-
-struct SymbolParsingData {
-	std::string name;
-	ast::build::SymbolClass symbolClass;
-
-};
-
-struct Context {
-	std::map<std::string, Stub> symbols;
-	std::map<std::string, SymbolClass> symbolClass;
-	Graph<Node*, NodeCompare> nodes;
-	Namespace* currentNamespace;
-
-	void setSymbolClass(std::string& s, SymbolClass c);
+    [[nodiscard]] bool await_ready() const noexcept;
+    void await_suspend(std::coroutine_handle<> h) const;
+    [[nodiscard]] Symbol* await_resume() const;
 };
 
 }

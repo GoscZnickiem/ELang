@@ -47,6 +47,7 @@ struct PointerC {
 struct FunctionC {
 	CompiledType returnType;
 	std::vector<CompiledType> argTypes;
+	bool isOperator;
 };
 
 struct AmbiguousC {

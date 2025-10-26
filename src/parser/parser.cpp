@@ -3,17 +3,11 @@
 #include "data/ast.hpp"
 #include "data/astBuilding.hpp"
 #include "data/tokens.hpp"
-#include "help/variant.hpp"
-#include "help/visitor.hpp"
+#include "tokens.hpp"
 
 #include <cstddef>
-#include <iterator>
 #include <list>
-#include <memory>
-#include <optional>
 #include <string>
-#include <utility>
-#include <variant>
 #include <vector>
 #include <stdexcept>
 
@@ -49,6 +43,10 @@ std::list<Token>::iterator findRightBrace(std::list<Token>::iterator it) {
 	}
 }
 
+std::list<Token>::iterator findEndOfNamespace(std::list<Token>& tokens) {
+	return findRightBrace(tokens.begin());
+}
+
 std::list<Token>::iterator findEndOfDeclaration(std::list<Token>& tokens) {
 	auto it = tokens.begin();
 	while(it->type != TokenType::SEMICOLON) {
@@ -61,32 +59,101 @@ std::list<Token>::iterator findEndOfDeclaration(std::list<Token>& tokens) {
 	return ++it;
 }
 
+void eat(std::list<Token>& tokens, std::string expected) {
+	if(tokens.front().type != TokenType::SYMBOL) {
+		throw std::runtime_error("Error: Expected symbol. Line: " +
+						   std::to_string(tokens.front().metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(tokens.front().metadata.columnEnd) +
+						   ".");
+	}
+	if(tokens.front().data != expected) {
+		throw std::runtime_error("Error: Expected symbol '" +
+						   expected +
+						   "'. Line: " +
+						   std::to_string(tokens.front().metadata.lineEnd) +
+						   ", Column: " +
+						   std::to_string(tokens.front().metadata.columnEnd) +
+						   ".");
+	}
+	tokens.pop_front();
+}
+
+Token eat(std::list<Token>& tokens, TokenType expected) {
+	if(tokens.front().type != expected) {
+		throw std::runtime_error("Error: Expected." + 
+						   tokenTypeToString(expected) +
+						   " Line: " +
+						   std::to_string(tokens.front().metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(tokens.front().metadata.columnEnd) +
+						   ".");
+	}
+	auto result = std::move(tokens.front());
+	tokens.pop_front();
+	return result;
+}
+
+Token eat(std::list<Token>& tokens, std::list<Token>::iterator token, TokenType expected) {
+	if(token->type != expected) {
+		throw std::runtime_error("Error: Expected." + 
+						   tokenTypeToString(expected) +
+						   " Line: " +
+						   std::to_string(token->metadata.lineEnd) + 
+						   ", Column: " + 
+						   std::to_string(token->metadata.columnEnd) +
+						   ".");
+	}
+	auto result = std::move(*token);
+	tokens.erase(token);
+	return result;
+}
+
 ast::build::Stub splitStub(std::list<Token>& tokens) {
 	ast::build::Namespace stub;
 	stub.tokens.splice(stub.tokens.end(), tokens, tokens.begin(), findEndOfDeclaration(tokens));
 	return stub;
 }
 
-void identifyNamespaceContents(ast::build::Namespace& space, Context& context) {
-	auto& tokens = space.tokens;
+void splitNextSymbolBuild(std::list<Token>& tokens, std::string namePrefix);
+
+void buildNamespaceContents(std::list<Token> tokens, const std::string& nsName) {
 	while(!tokens.empty()) {
-		auto stub = splitStub(tokens);
+		splitNextSymbolBuild(tokens, nsName == "" ? "" : nsName + "::");
+	}
+}
+
+void buildNamespace(std::list<Token> tokens, const std::string& namePrefix) {
+	eat(tokens, "namespace");
+	// TODO: nested namespaces (namespace A::B::C {...})
+	auto n = eat(tokens, TokenType::SYMBOL);
+	eat(tokens, TokenType::BRACE_L);
+	eat(tokens, std::prev(tokens.end()), TokenType::BRACE_R);
+
+	std::string name = namePrefix + n.data;
+	ast::build::SymbolBuilder::context[name].symbol = ast::build::Symbol{};
+	ast::build::SymbolBuilder::context[name].symbol->setAsNamespace();
+
+	buildNamespaceContents(std::move(tokens), name);
+}
+
+void splitNextSymbolBuild(std::list<Token>& tokens, std::string namePrefix) {
+	if(tokens.front().data == "namespace") {
+		const auto it = findEndOfNamespace(tokens);
+		std::list<Token> nsTokens;
+		nsTokens.splice(nsTokens.end(), tokens, tokens.begin(), it);
+		buildNamespace(std::move(nsTokens), namePrefix);
+	} else {
 
 	}
 }
 
+
 }
 
 std::vector<ast::Declaration> parse(std::list<Token>& tokens) {
-	Context context;
-
-	ast::build::Namespace global;
-	global.name = "";
-	global.tokens = std::move(tokens);
-	context.currentNamespace = &global;
-	identifyNamespaceContents(global, context);
-
-
+	ast::build::SymbolBuilder::context.clear();
+	buildNamespaceContents(std::move(tokens), "");
 }
 
 // Parser::Parser(CompilationUnit* parent) : root(parent) { }

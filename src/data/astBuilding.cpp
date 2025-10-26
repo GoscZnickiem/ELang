@@ -1,26 +1,46 @@
 #include "astBuilding.hpp"
-#include <stdexcept>
+#include <exception>
 
 namespace elc::ast::build {
 
-void Context::setSymbolClass(std::string& s, SymbolClass c) {
-	auto [it, success] = symbolClass.try_emplace(s, c);
-	if(success) return;
-	if(it->second == SymbolClass::NAMESPACE) {
-		if(c != SymbolClass::NAMESPACE) {
-			throw std::runtime_error("The symbol '" + s + "' is a namespace.");
-		}
-	} else if(it->second != c && it->second != SymbolClass::ANY) {
-		throw std::runtime_error("The symbol '" + s + "' is already declared as a symbol of a different symbol class.");
-	}
-	it->second = c;
+// NOLINTBEGIN(readability-convert-member-functions-to-static)
+
+bool SymbolBuilder::promise_type::final_awaiter::await_ready() const noexcept { return false; }
+void SymbolBuilder::promise_type::final_awaiter::await_suspend(std::coroutine_handle<promise_type> h) const noexcept {
+	h.destroy();
+}
+void SymbolBuilder::promise_type::final_awaiter::await_resume() const noexcept {}
+
+SymbolBuilder SymbolBuilder::promise_type::get_return_object() noexcept { 
+	return SymbolBuilder{std::coroutine_handle<promise_type>::from_promise(*this)}; 
 }
 
-bool NodeCompare::operator()(const Node& a, const Node& b) const {
-	if(a.dependencies.size() != b.dependencies.size()) {
-		return a.dependencies.size() > b.dependencies.size();
-	}
-	return a.priority > b.priority;
+std::suspend_never SymbolBuilder::promise_type::initial_suspend() noexcept { return {}; }
+SymbolBuilder::promise_type::final_awaiter SymbolBuilder::promise_type::final_suspend() noexcept { return {}; }
+void SymbolBuilder::promise_type::return_void() noexcept {}
+
+void SymbolBuilder::promise_type::unhandled_exception() { 
+	auto e = std::current_exception();
+}
+// NOLINTEND(readability-convert-member-functions-to-static)
+
+SymbolBuilder::SymbolBuilder(std::coroutine_handle<promise_type> h) : handle(h) {}
+
+SymbolBuilder::SymbolBuilder(SymbolBuilder&& other) noexcept = default;
+SymbolBuilder& SymbolBuilder::operator=(SymbolBuilder&& other) noexcept = default;
+SymbolBuilder::SymbolBuilder(const SymbolBuilder& other) = default;
+SymbolBuilder& SymbolBuilder::operator=(const SymbolBuilder& other) = default;
+
+bool VirtualSymbolAwait::await_ready() const noexcept {
+	return symbol->symbol.has_value();
+}
+
+void VirtualSymbolAwait::await_suspend(std::coroutine_handle<> h) const {
+	symbol->waiters.push_back(h);
+}
+
+Symbol* VirtualSymbolAwait::await_resume() const {
+	return &*symbol->symbol;
 }
 
 }
